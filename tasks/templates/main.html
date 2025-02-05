@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Task Manager{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/main_page_styles.css' %}">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <script src="https://unpkg.com/htmx.org@1.7.0"></script>
+</head>
+
+<body hx-boost="true">
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <span>Task Manager</span>
+        </div>
+        <div class="nav-right">
+            {% if user.is_authenticated %}
+            <span>Welcome, {{ user.username }}!</span>
+            <a href="{% url 'account_logout' %}" class="btn logout-btn">Logout</a>
+
+            {% else %}
+            <a href="{% url 'account_login' %}" class="btn login-btn">Login</a>
+            <a href="{% url 'account_signup' %}" class="btn signup-btn">Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+
+    <div class="manager-container">
+        <!-- Grid header:  Calendar Project Name Edit Delete -->
+        <div class="grid-container">
+            <div class="project-header">
+                <div class="icon"><img src="{% static 'images/calendar.png' %}" alt="Calendar Icon" height="20"></div>
+                <div>Project Ceasure </div>
+            </div>
+            <div></div>
+            <div class="icons-right">
+                <div class="icon"><img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20"></div>
+                <div class="icon"><img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20"></div>
+            </div>
+        </div>
+
+        <!-- Grid 1 row: Input Add Task -->
+        <div class="input-row">
+            <div class="unified-input">
+                <div class="input-icon"><img src="{% static 'images/plus.png' %}" alt="Add Icon" height="20"></div>
+                <input type="text" placeholder="Add new task..." id="new-task" name="task_name" x-model="newTask"
+                    @keyup.enter="addTask">
+                <button id="add-task-btn" hx-post="{% url 'add_task' %}" hx-target="#task-list" hx-swap="beforeend"
+                    hx-trigger="click" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' @click="addTask">
+                    Add Task
+                </button>
+            </div>
+        </div>
+
+        <!-- Grid 2 row: Dynamic part of different tasks -->
+        <div id="task-list">
+            {% if tasks %}
+            {% for task in tasks %}
+            <div class="task-grid" id="task-{{ task.id }}">
+                <div class="task-content">
+                    <input type="checkbox" {% if task.is_done %}checked{% endif %}>
+                    <div>{{ task.title }}</div>
+                </div>
+
+                <div></div> <!-- Empty middle column to maintain grid structure -->
+
+                <div class="icons-right">
+                    <div class="priority-controls">
+                        <div class="icon">🔼</div>
+                        <div class="icon">🔽</div>
+                    </div>
+                    <div class="icon">
+                        <img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20">
+                    </div>
+                    <div class="icon">
+                        <img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</body>
+
+</html>

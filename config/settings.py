@@ -24,8 +24,6 @@ DEBUG = os.getenv('DEBUG', 'True')
 ALLOWED_HOSTS: list[str] = []
 
 
-# Application definition
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -34,6 +32,10 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "tasks",
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
 ]
 
 MIDDLEWARE = [
@@ -44,6 +46,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
+    "django_htmx.middleware.HtmxMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -73,7 +77,6 @@ DATABASES = {
     },
 }
 
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -89,6 +92,35 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+
+SITE_ID = 1
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_AUTHENTICATION_METHOD = "username"
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_EMAIL_REQUIRED = False
+
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+ACCOUNT_LOGIN_REDIRECT_URL = "base_view_handler"
+ACCOUNT_LOGOUT_REDIRECT_URL = "base_view_handler"
+
+AUTH_USER_MODEL = 'tasks.User'
+
+ACCOUNT_FORMS = {
+    'login': 'tasks.forms.CustomLoginForm',
+    'signup': 'tasks.forms.CustomSignupForm',
+}
+
+STATIC_URL = '/static/'
+STATIC_ROOT = Path(BASE_DIR) / 'static'
+
+MEDIA_URL = "/images/"
+MEDIA_ROOT = Path(BASE_DIR) / "static" / "images"
 
 LANGUAGE_CODE = "en-us"
 
