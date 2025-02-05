@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ project.name }}</title>
+</head>
+
+<body>
+    <h1>{{ project.name }}</h1>
+    <a href="{% url 'add_task' project.id %}">Add Task</a>
+    <h2>Tasks</h2>
+    <ul>
+        {% for task in tasks %}
+        <li>
+            {{ task.title }} - {{ task.deadline }} -
+            {% if task.is_done %}
+            ✅ Completed
+            {% else %}
+            ❌ Not Done
+            {% endif %}
+        </li>
+        {% empty %}
+        <p>No tasks yet.</p>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'project_list' %}">Back to Projects</a>
+</body>
+
+</html>

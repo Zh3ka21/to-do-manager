@@ -1,0 +1,72 @@
+[tool.poetry]
+name = "to-do-manager"
+version = "0.1.0"
+description = "A simple to-do manager"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+python-dotenv = "^1.0.1"
+django = "^5.1.5"
+django-stubs = "^5.1.2"
+django-allauth = "^65.3.1"
+django-environ = "^0.12.0"
+pymysql = "^1.1.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+pytest-django = "^4.9.0"
+ruff = "^0.9.4"
+mypy = "^1.14.1"
+black = "^25.1.0"
+isort = "^6.0.0"
+pylint = "^3.3.4"
+pylint-django = "^2.6.1"
+django-stubs = "^5.1.2"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["."]
+
+[tool.ruff.lint]
+select = ["F", "I", "W", "E", "N", "D", "S", "ANN", "ARG", "B", "C4", "E", "ERA", "ISC", "PD", "PIE", "PL", "PT", "RET", "SIM", "TCH", "UP", "W", "BLE", "FBT", "B", "A", "COM", "DTZ", "ICN", "G", "INP", "T20", "RSE", "SLF", "PTH", "TD", "PGH", "PERF", "FURB", "RUF"]
+ignore = []
+
+[tool.mypy.django-stubs]
+django_settings_module = "config.settings"
+
+[tool.mypy]
+ignore_missing_imports = true
+warn_redundant_casts = true
+show_error_codes = true
+plugins = ["mypy_django_plugin.main"]
+
+[tool.django-stubs]
+django_settings_module = "config.settings"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --cache-clear"
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+testpaths = [
+
+]
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+line_length = 120
+known_third_party = ["django"]
+
+[tool.pylint]
+load-plugins = ["pylint_django"]
+max-line-length = 120
+django-settings-module = "config.settings"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
