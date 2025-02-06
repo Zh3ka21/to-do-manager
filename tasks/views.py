@@ -3,7 +3,7 @@ from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
+from django.template.loader import render_to_string
 from django.utils.timezone import now
 
 from tasks.forms import TaskForm
@@ -100,18 +100,13 @@ def move_task(request: HttpRequest, task_id: int, direction: str):
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
 @login_required
-def edit_task(request, task_id: int) -> HttpResponse:
+def edit_task(request, task_id):
     task = get_object_or_404(Task, id=task_id)
 
     if request.method == "POST":
-        # Update the task title
         new_title = request.POST.get("title")
         if new_title:
             task.title = new_title
             task.save()
-            return HttpResponse(status=204)  # No content response for HTMX
-        else:
-            return HttpResponse("Title is required", status=400)
-
-    # Render the edit form for GET requests
-    return render(request, "partials/edit_task_form.html", {"task": task})
+        return render(request, "partials/task_partial.html", {"task": task})
+    return HttpResponse(status=400)
