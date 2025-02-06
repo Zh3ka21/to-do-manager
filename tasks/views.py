@@ -1,6 +1,12 @@
+from datetime import datetime
+
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.dateparse import parse_datetime
+from django.utils.timezone import now
+
+from tasks.forms import TaskForm
 
 from .models import Project, Task
 
@@ -20,15 +26,56 @@ def base_view_handler(request: HttpRequest) -> HttpResponse:
     }
     return render(request, "main.html", context)
 
-def toggle_task(request: HttpRequest, task_id: int) -> HttpResponse:
-    task = get_object_or_404(Task, id=task_id)
-
-    # Toggle the task's completion status
-    task.is_done = not task.is_done
+@login_required
+def toggle_task_done(request, task_id: int) -> HttpResponse:
+    """Toggle the completion status of a task."""
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    task.is_done = not task.is_done  # Toggle status
     task.save()
+    return render(request, 'partials/task_partial.html', {'task': task})
 
-    # Redirect back to the page after toggling
-    return redirect(request.META.get('HTTP_REFERER', '/'))
+
+@login_required
+def add_task(request):
+    if request.method == "POST":
+        title = request.POST.get("task_name")  # Match input field name
+        deadline_time = request.POST.get("deadline_time")
+        project_name = request.POST.get("project_name")
+
+        if not title:
+            return JsonResponse({'error': 'Task title is required'}, status=400)
+
+        try:
+            project = Project.objects.get(name=project_name, user=request.user)
+        except Project.DoesNotExist:
+            return JsonResponse({'error': 'Invalid project'}, status=400)
+
+
+        if deadline_time:
+            try:
+                deadline = datetime.strptime(deadline_time, "%H:%M").time()
+                deadline = datetime.combine(now().date(), deadline)  
+            except ValueError:
+                return JsonResponse({'error': 'Invalid time format'}, status=400)
+        else:
+            deadline = now() 
+
+        task = Task.objects.create(
+            project=project,
+            title=title,
+            deadline=deadline,
+            user=request.user,
+        )
+
+        return render(request, 'partials/task_partial.html', {'task': task})
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+@login_required
+def delete_task(request, task_id: int) -> HttpResponse:
+    """Delete task dynamically using HTMX."""
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    task.delete()
+    return JsonResponse({'success': True})
 
 def move_task(request: HttpRequest, task_id: int, direction: str):
     task = get_object_or_404(Task, id=task_id)
@@ -52,27 +99,6 @@ def move_task(request: HttpRequest, task_id: int, direction: str):
 
     # Redirect back to the page after moving the task
     return redirect(request.META.get('HTTP_REFERER', '/'))
-
-@login_required
-def add_task(request) -> HttpResponse:
-    """Add task to a project."""
-    if request.method == "POST":
-        print(request.POST)  # Debugging
-        task_name = request.POST.get("task_name")
-        if not task_name:
-            return JsonResponse({'error': 'No task name provided'}, status=400)
-
-        task = Task.objects.create(title=task_name, user=request.user)
-        return render(request, 'task_partial.html', {'task': task})
-
-    return JsonResponse({'error': 'Invalid request'}, status=400)
-
-@login_required
-def delete_task(request, task_id: int) -> HttpResponse:
-    """Delete task from a project."""
-    task = Task.objects.get(id=task_id, user=request.user)
-    task.delete()
-    return JsonResponse({'success': True})
 
 @login_required
 def edit_task(request, task_id: int) -> HttpResponse:

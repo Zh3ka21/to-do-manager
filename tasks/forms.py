@@ -13,13 +13,13 @@ class ProjectForm(forms.ModelForm):
         fields = ["name"]
 
 class TaskForm(forms.ModelForm):
-    """Form for creating and updating a task."""
     class Meta:
         model = Task
-        fields = ["title", "deadline", "priority", "user", "is_done"]
+        fields = ["project", "title", "deadline", "is_done", "priority"]
         widgets = {
-            "deadline": forms.DateTimeInput(attrs={"type": "datetime-local"}),  
+            "deadline": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
+
 
 class CustomLoginForm(LoginForm):
     def __init__(self, *args, **kwargs):
