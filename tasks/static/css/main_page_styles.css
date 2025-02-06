@@ -63,9 +63,8 @@ body {
 }
 
 .task-content div {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-wrap: break-word;
+  white-space: normal;
   flex: 1;
 }
 

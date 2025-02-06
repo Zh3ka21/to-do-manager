@@ -3,7 +3,7 @@ from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.dateparse import parse_datetime
+from django.urls import reverse
 from django.utils.timezone import now
 
 from tasks.forms import TaskForm
@@ -18,7 +18,7 @@ def base_view_handler(request: HttpRequest) -> HttpResponse:
     else:
         projects = Project.objects.none()
 
-    tasks = Task.objects.filter(project__in=projects)
+    tasks = Task.objects.filter(project__in=projects).order_by('priority')
 
     context = {
         'projects': projects,
@@ -33,7 +33,6 @@ def toggle_task_done(request, task_id: int) -> HttpResponse:
     task.is_done = not task.is_done  # Toggle status
     task.save()
     return render(request, 'partials/task_partial.html', {'task': task})
-
 
 @login_required
 def add_task(request):
@@ -58,16 +57,17 @@ def add_task(request):
             except ValueError:
                 return JsonResponse({'error': 'Invalid time format'}, status=400)
         else:
-            deadline = now() 
+            deadline = now()
 
-        task = Task.objects.create(
+        _ = Task.objects.create(
             project=project,
             title=title,
             deadline=deadline,
             user=request.user,
         )
 
-        return render(request, 'partials/task_partial.html', {'task': task})
+        tasks = Task.objects.filter(project__in=project).order_by('priority')
+        return render(request, 'partials/task_list.html', {'tasks': tasks})
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 @login_required
@@ -80,12 +80,12 @@ def delete_task(request, task_id: int) -> HttpResponse:
 def move_task(request: HttpRequest, task_id: int, direction: str):
     task = get_object_or_404(Task, id=task_id)
 
-    # Get all tasks sorted by a field such as 'order' or 'created_at'
+    # Get all tasks sorted by a field  'priority'
     tasks = Task.objects.all().order_by('priority')
 
-    task_index = list(tasks).index(task)  # Find the current index of the task
+    task_index = list(tasks).index(task)
 
-    # Move the task up or down based on the direction
+    # Move the task up or down
     if direction == 'up' and task_index > 0:
         task_to_swap = tasks[task_index - 1]
         task_to_swap.priority, task.priority = task.priority, task_to_swap.priority
@@ -97,19 +97,21 @@ def move_task(request: HttpRequest, task_id: int, direction: str):
         task_to_swap.save()
         task.save()
 
-    # Redirect back to the page after moving the task
     return redirect(request.META.get('HTTP_REFERER', '/'))
 
 @login_required
 def edit_task(request, task_id: int) -> HttpResponse:
-    """Edit a task in a project."""
-    task = Task.objects.get(id=task_id, user=request.user)
-    if request.method == 'GET':
-        # Render a form or HTML snippet for editing
-        return render(request, 'task_edit_partial.html', {'task': task})
+    task = get_object_or_404(Task, id=task_id)
 
-    if request.method == 'POST':
-        task.title = request.POST.get('task_name')
-        task.save()
-        return render(request, 'task_partial.html', {'task': task})
-    return render(request, 'main.html')
+    if request.method == "POST":
+        # Update the task title
+        new_title = request.POST.get("title")
+        if new_title:
+            task.title = new_title
+            task.save()
+            return HttpResponse(status=204)  # No content response for HTMX
+        else:
+            return HttpResponse("Title is required", status=400)
+
+    # Render the edit form for GET requests
+    return render(request, "partials/edit_task_form.html", {"task": task})
