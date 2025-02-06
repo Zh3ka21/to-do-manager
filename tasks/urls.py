@@ -1,25 +1,18 @@
 from django.urls import path
 
-from .views import (
-    add_task_to_project,
-    create_project_view,
-    delete_project_view,
-    delete_task_from_project,
-    project_detail_view,
-    project_list_view,
-    update_project_view,
-    update_task_in_project,
-)
+from tasks.views import base_view_handler
+
+from .views import add_task, delete_task, edit_task, move_task, toggle_task_done
 
 urlpatterns = [
-    path("projects/", project_list_view, name="project_list"),
-    path("projects/create/", create_project_view, name="create_project"),
-    path("projects/<int:project_id>/update/", update_project_view, name="update_project"),
-    path("projects/<int:project_id>/delete/", delete_project_view, name="delete_project"),
-    path("projects/<int:project_id>/", project_detail_view, name="project_detail"),
+    path('', base_view_handler, name='base_view_handler'),
 
-    path("projects/<int:project_id>/add_task/", add_task_to_project, name="add_task"),
-    path("projects/<int:project_id>/tasks/add/", add_task_to_project, name="add_task"),
-    path("projects/<int:project_id>/tasks/<int:task_id>/update/", update_task_in_project, name="update_task"),
-    path("projects/<int:project_id>/tasks/<int:task_id>/delete/", delete_task_from_project, name="delete_task"),
+    path('task/<int:task_id>/toggle/', toggle_task_done, name='toggle_task_done'),
+    path('task/<int:task_id>/move/<str:direction>/', move_task, name='move_task'),
+
+    path('add_task/', add_task, name='add_task'),
+    path('delete-task/<int:task_id>/', delete_task, name='delete_task'),
+
+    path('edit_task/<int:task_id>/', edit_task, name='edit_task'),
+
 ]

@@ -5,7 +5,7 @@ body {
 }
 
 .manager-container {
-  max-width: 800px;
+  max-width: 8000px;
   margin: 0 auto;
   border: 1px solid #ccc;
   border-radius: 0 0 20px 20px;
@@ -20,7 +20,8 @@ body {
   padding: 15px;
   align-items: center;
   border-bottom: 2px solid #ccc;
-  background-color: #f8f8f8;
+  background-color: rgb(35, 35, 209); /* Blue background */
+  color: white; /* Making text white for better contrast */
 }
 
 .project-header {
@@ -29,14 +30,25 @@ body {
   gap: 10px;
 }
 
+.input-row {
+  padding: 10px;
+  background-color: gray;
+}
+
+.grid-container .icon img {
+  filter: brightness(0) invert(1); /* Makes icons white */
+}
+
 .task-grid {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 10px;
   padding: 15px;
   align-items: center;
   border-bottom: 1px solid #ddd;
   transition: background-color 0.2s;
+  background-color: white;
+  width: 100%;
 }
 
 .task-grid:hover {
@@ -46,7 +58,15 @@ body {
 .task-content {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  min-width: 0;
+}
+
+.task-content div {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
 }
 
 button {
@@ -79,25 +99,19 @@ button:hover {
 
 .icons-right {
   display: flex;
-  gap: 8px;
-  justify-content: flex-end;
   align-items: center;
+  gap: 8px;
+  margin-right: 20px; /* Add some right margin to prevent touching the edge */
 }
 
 .priority-controls {
   display: flex;
-  flex-direction: column;
+  gap: 4px;
   align-items: center;
-  gap: 2px;
 }
 
 .priority-controls .icon {
   font-size: 13px;
-}
-
-.input-row {
-  padding: 15px;
-  border-bottom: 1px solid #ddd;
 }
 
 .unified-input {
@@ -121,7 +135,6 @@ input[type="text"] {
   flex: 1;
   min-width: 50px;
   height: 30px;
-  border: none;
   padding: 0 12px;
   outline: none;
   font-size: 14px;
@@ -145,6 +158,7 @@ input[type="checkbox"] {
 
   .icons-right {
     gap: 4px;
+    margin-right: 10px;
   }
 
   .icon img {

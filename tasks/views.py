@@ -1,94 +1,115 @@
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from datetime import datetime
 
-from .forms import ProjectForm, TaskForm
+from django.contrib.auth.decorators import login_required
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.dateparse import parse_datetime
+from django.utils.timezone import now
+
+from tasks.forms import TaskForm
+
 from .models import Project, Task
 
 
-def project_list_view(request: HttpRequest) -> HttpResponse:
-    """View to see a list of projects."""
-    projects = Project.objects.all()
-    context = {"projects": projects}
-    return render(request, "projects/projects_list.html", context)
-
-def create_project_view(request: HttpRequest) -> HttpResponse:
-    """View to create a new project."""
-    if request.method == "POST":
-        form = ProjectForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect("project_list")  # Redirect to a project list view
+def base_view_handler(request: HttpRequest) -> HttpResponse:
+    """Handle default URL routing."""
+    if request.user.is_authenticated:
+        projects = Project.objects.filter(user=request.user)
     else:
-        form = ProjectForm()
-    return render(request, "projects/create_project.html", {"form": form})
+        projects = Project.objects.none()
 
-def update_project_view(request: HttpRequest, project_id: int) -> HttpResponse:
-    """View to update an existing project."""
-    project = get_object_or_404(Project, id=project_id)
+    tasks = Task.objects.filter(project__in=projects)
+
+    context = {
+        'projects': projects,
+        'tasks': tasks,
+    }
+    return render(request, "main.html", context)
+
+@login_required
+def toggle_task_done(request, task_id: int) -> HttpResponse:
+    """Toggle the completion status of a task."""
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    task.is_done = not task.is_done  # Toggle status
+    task.save()
+    return render(request, 'partials/task_partial.html', {'task': task})
+
+
+@login_required
+def add_task(request):
     if request.method == "POST":
-        form = ProjectForm(request.POST, instance=project)
-        if form.is_valid():
-            form.save()
-            return redirect("project_detail", project_id=project.id)
-    else:
-        form = ProjectForm(instance=project)
-    return render(request, "projects/update_project.html", {"form": form, "project": project})
+        title = request.POST.get("task_name")  # Match input field name
+        deadline_time = request.POST.get("deadline_time")
+        project_name = request.POST.get("project_name")
 
-def delete_project_view(request: HttpRequest, project_id: int) -> HttpResponse:
-    """View to delete a project."""
-    project = get_object_or_404(Project, id=project_id)
-    if request.method == "POST":
-        project.delete()
-        return redirect("project_list")  # Redirect to project list view
-    return render(request, "projects/delete_project.html", {"project": project})
+        if not title:
+            return JsonResponse({'error': 'Task title is required'}, status=400)
 
-def project_detail_view(request: HttpRequest, project_id: int) -> HttpResponse:
-    """View to display a single project and its tasks."""
-    project = get_object_or_404(Project, id=project_id)
-    tasks = project.tasks.all()
-    return render(request, "projects/project_detail.html", {"project": project, "tasks": tasks})
-
-def add_task_to_project(request: HttpRequest, project_id: int) -> HttpResponse:
-    """View to add a task to a specific project."""
-    project = get_object_or_404(Project, id=project_id)
-
-    if request.method == "POST":
-        form = TaskForm(request.POST)
-        if form.is_valid():
-            task = form.save(commit=False)
-            task.project = project
-            task.save()
-            return redirect("project_detail", project_id=project.id)
-    else:
-        form = TaskForm()
-
-    return render(request, "tasks/add_task.html", {"form": form, "project": project})
-
-def update_task_in_project(request: HttpRequest, project_id: int, task_id: int) -> HttpResponse:
-    """View to update a task within a specific project."""
-    project = get_object_or_404(Project, id=project_id)
-    task = get_object_or_404(Task, id=task_id, project=project)  # Ensure task belongs to project
-
-    if request.method == "POST":
-        form = TaskForm(request.POST, instance=task)
-        if form.is_valid():
-            form.save()
-            return redirect("project_detail", project_id=project.id)
-    else:
-        form = TaskForm(instance=task)
-
-    return render(request, "tasks/update_task.html", {"form": form, "project": project, "task": task})
-
-def delete_task_from_project(request: HttpRequest, project_id: int, task_id: int) -> HttpResponse:
-    """View to delete a task from a specific project."""
-    project = get_object_or_404(Project, id=project_id)
-    task = get_object_or_404(Task, id=task_id, project=project)  # Ensure task belongs to project
-
-    if request.method == "POST":
-        task.delete()
-        return redirect("project_detail", project_id=project.id)
-
-    return render(request, "tasks/delete_task.html", {"project": project, "task": task})
+        try:
+            project = Project.objects.get(name=project_name, user=request.user)
+        except Project.DoesNotExist:
+            return JsonResponse({'error': 'Invalid project'}, status=400)
 
 
+        if deadline_time:
+            try:
+                deadline = datetime.strptime(deadline_time, "%H:%M").time()
+                deadline = datetime.combine(now().date(), deadline)  
+            except ValueError:
+                return JsonResponse({'error': 'Invalid time format'}, status=400)
+        else:
+            deadline = now() 
 
+        task = Task.objects.create(
+            project=project,
+            title=title,
+            deadline=deadline,
+            user=request.user,
+        )
+
+        return render(request, 'partials/task_partial.html', {'task': task})
+    return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+@login_required
+def delete_task(request, task_id: int) -> HttpResponse:
+    """Delete task dynamically using HTMX."""
+    task = get_object_or_404(Task, id=task_id, user=request.user)
+    task.delete()
+    return JsonResponse({'success': True})
+
+def move_task(request: HttpRequest, task_id: int, direction: str):
+    task = get_object_or_404(Task, id=task_id)
+
+    # Get all tasks sorted by a field such as 'order' or 'created_at'
+    tasks = Task.objects.all().order_by('priority')
+
+    task_index = list(tasks).index(task)  # Find the current index of the task
+
+    # Move the task up or down based on the direction
+    if direction == 'up' and task_index > 0:
+        task_to_swap = tasks[task_index - 1]
+        task_to_swap.priority, task.priority = task.priority, task_to_swap.priority
+        task_to_swap.save()
+        task.save()
+    elif direction == 'down' and task_index < len(tasks) - 1:
+        task_to_swap = tasks[task_index + 1]
+        task_to_swap.priority, task.priority = task.priority, task_to_swap.priority
+        task_to_swap.save()
+        task.save()
+
+    # Redirect back to the page after moving the task
+    return redirect(request.META.get('HTTP_REFERER', '/'))
+
+@login_required
+def edit_task(request, task_id: int) -> HttpResponse:
+    """Edit a task in a project."""
+    task = Task.objects.get(id=task_id, user=request.user)
+    if request.method == 'GET':
+        # Render a form or HTML snippet for editing
+        return render(request, 'task_edit_partial.html', {'task': task})
+
+    if request.method == 'POST':
+        task.title = request.POST.get('task_name')
+        task.save()
+        return render(request, 'task_partial.html', {'task': task})
+    return render(request, 'main.html')
