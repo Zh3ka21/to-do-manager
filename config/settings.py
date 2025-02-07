@@ -103,18 +103,13 @@ ACCOUNT_AUTHENTICATION_METHOD = "username"
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_REQUIRED = False
 
+# Redirect to main page after login or signup
 LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
+ACCOUNT_SIGNUP_REDIRECT_URL = '/'
+ACCOUNT_LOGOUT_REDIRECT_URL = '/'
 
-ACCOUNT_LOGIN_REDIRECT_URL = "base_view_handler"
-ACCOUNT_LOGOUT_REDIRECT_URL = "base_view_handler"
 
 AUTH_USER_MODEL = 'tasks.User'
-
-ACCOUNT_FORMS = {
-    'login': 'tasks.forms.CustomLoginForm',
-    'signup': 'tasks.forms.CustomSignupForm',
-}
 
 STATIC_URL = '/static/'
 STATIC_ROOT = Path(BASE_DIR) / 'static'

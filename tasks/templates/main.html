@@ -45,7 +45,7 @@
         <div class="input-row">
             <form id="task-form" hx-post="{% url 'add_task' %}" hx-target="#task-list" hx-swap="beforeend"
                 hx-trigger="submit" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-
+                {% csrf_token %}
                 <!-- TODO: Delete Hardcoded name -->
                 <input type="hidden" name="project_name" value="For Home">
                 <div class="unified-input">
@@ -74,8 +74,10 @@
             <div class="task-grid" id="task-{{ task.id }}">
                 <div class="task-content">
                     <input type="checkbox" hx-post="{% url 'toggle_task_done' task.id %}" hx-trigger="change"
-                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' hx-target="#task-{{ task.id }}" hx-swap="outerHTML" 
-                        {% if task.is_done %} checked {% endif %}>
+                        hx-target="#task-{{ task.id }}" hx-swap="outerHTML" {% if task.is_done %} checked {% endif %}
+                        hx-headers='{"X-CSRFToken": getCSRFToken()}'>
+
+                        
                 
                     <!-- Displayed Task Title -->
                     <div class="task-title" id="task-title-{{ task.id }}" {% if task.is_done %} style="text-decoration: line-through;"
@@ -124,9 +126,10 @@
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 <script>
     document.getElementById("task-form").addEventListener("htmx:afterRequest", function () {
-        document.getElementById("new-task").value = "";
-        document.getElementById("deadline-time").value = "";
-    });
+            console.log("Form submitted, clearing inputs.");
+            document.getElementById("new-task").value = "";
+            document.getElementById("deadline-time").value = "";
+        });
 
     document.body.addEventListener('htmx:configRequest', function (event) {
         event.detail.headers['X-CSRFToken'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -147,6 +150,16 @@
             inputElement.focus();
     }
 
+    function getCSRFToken() {
+        return document.cookie.split('; ')
+            .find(row => row.startsWith('csrftoken='))
+            ?.split('=')[1];
+    }
+
+    // Set CSRF token dynamically for all HTMX requests
+    document.addEventListener("htmx:configRequest", (event) => {
+        event.detail.headers['X-CSRFToken'] = getCSRFToken();
+    });
 </script>
 
 </html>

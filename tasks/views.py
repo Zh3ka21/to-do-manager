@@ -59,15 +59,19 @@ def add_task(request):
         else:
             deadline = now()
 
-        _ = Task.objects.create(
+        # Counting lowest priority task to append to bottom of task list
+        lowest_priority_task = Task.objects.filter(project=project).order_by('-priority').first()
+        lowest_priority = lowest_priority_task.priority if lowest_priority_task else 0
+
+        task = Task.objects.create(
             project=project,
             title=title,
             deadline=deadline,
             user=request.user,
+            priority = lowest_priority+1,
         )
 
-        tasks = Task.objects.filter(project__in=project).order_by('priority')
-        return render(request, 'partials/task_list.html', {'tasks': tasks})
+        return render(request, 'partials/task_partial.html', {'task': task})
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 @login_required

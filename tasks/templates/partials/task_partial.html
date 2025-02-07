@@ -2,7 +2,8 @@
 <div class="task-grid" id="task-{{ task.id }}">
     <div class="task-content">
         <input type="checkbox" hx-post="{% url 'toggle_task_done' task.id %}" hx-trigger="change"
-            hx-target="#task-{{ task.id }}" hx-swap="outerHTML" {% if task.is_done %}checked{% endif %}>
+            hx-target="#task-{{ task.id }}" hx-swap="outerHTML" {% if task.is_done %} checked {% endif %}
+            hx-headers='{"X-CSRFToken": getCSRFToken()}'>
 
         <div class="task-title" id="task-title-{{ task.id }}"
         {% if task.is_done %}style="text-decoration: line-through;" {% endif %}>
