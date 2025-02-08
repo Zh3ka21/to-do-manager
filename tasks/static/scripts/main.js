@@ -277,13 +277,27 @@ function fetchTasksForDate(dateString) {
       const taskList = document.getElementById("task-list");
       taskList.innerHTML = ""; // Clear existing tasks
 
-      if (data.tasks.length === 0) {
+      console.log(data);
+
+      // Update the project name
+      const projectNamePlaceholder = document.getElementById(
+        "project-name-placeholder"
+      );
+      if (projectNamePlaceholder && data.context && data.context.project) {
+        projectNamePlaceholder.innerText = data.context.project.name;
+      }
+
+      // Check if there are no tasks
+      if (data.context.tasks.length === 0) {
         taskList.innerHTML = "<p>No tasks for this day.</p>";
         return;
       }
 
+      // Sort tasks by priority (higher priority first)
+      data.context.tasks.sort((a, b) => b.priority - a.priority);
+
       // Loop through each task and build the HTML dynamically
-      data.tasks.forEach((task) => {
+      data.context.tasks.forEach((task) => {
         const taskHtml = `
         <div class="task-grid" id="task-${task.id}">
             <div class="task-content">
@@ -323,8 +337,12 @@ function fetchTasksForDate(dateString) {
 
             <div class="icons-right">
                 <div class="priority-controls">
-                    <div class="icon">🔼</div>
-                    <div class="icon">🔽</div>
+                    <div class="icon" onclick="changePriority(${
+                      task.id
+                    }, 1)">🔼</div>
+                    <div class="icon" onclick="changePriority(${
+                      task.id
+                    }, -1)">🔽</div>
                 </div>
 
                 <div class="icon">

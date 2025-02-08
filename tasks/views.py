@@ -3,10 +3,10 @@ import json
 from datetime import date, datetime
 
 from django.contrib.auth.decorators import login_required
+from django.forms import model_to_dict
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import render_to_string
-from django.utils.timezone import make_aware, now
+from django.utils.timezone import now
 
 from .models import Project, Task
 
@@ -198,7 +198,11 @@ def get_tasks_for_date(request):
 
     project = Project.objects.filter(user=request.user, project_date=date).first()
     if not project:
-        return JsonResponse({"tasks": []})  # No project for that date
+        return JsonResponse({"context": {"tasks": []}})
 
     tasks = Task.objects.filter(project=project).values("id", "title", "is_done")
-    return JsonResponse({"tasks": list(tasks)})
+    context = {
+        "tasks": list(tasks),
+        "project": model_to_dict(project),
+    }
+    return JsonResponse({"context": context})
