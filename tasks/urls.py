@@ -7,6 +7,7 @@ from .views import (
     create_project,
     delete_task,
     edit_task,
+    get_tasks_for_date,
     move_task,
     project_dates,
     toggle_task_done,
@@ -25,4 +26,5 @@ urlpatterns = [
     path('project_dates/', project_dates, name='project_dates'),
     path('create_project/', create_project, name='create_project'),
 
+    path('get_tasks_for_date/', get_tasks_for_date, name='get_tasks_for_date'),
 ]

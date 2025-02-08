@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,9 +6,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Task Manager{% endblock %}</title>
-    {% load static %}
     <link rel="stylesheet" href="{% static 'css/main_page_styles.css' %}">
     <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <script>
+        const deleteIconPath = "{% static 'images/delete.png' %}";
+        const calendIconPath = "{% static 'images/calendar.png' %}";
+        const clockIconPath = "{% static 'images/clock.png' %}";
+        const pencilIconPath = "{% static 'images/pencil.png' %}";
+        const plusIconPath = "{% static 'images/plus.png' %}";
+    </script>
 
     <script src="{% static 'scripts/main.js' %}"></script>
     <script src="https://unpkg.com/htmx.org@1.7.0"></script>
@@ -17,7 +25,6 @@
 
 <body hx-boost="true">
     {% csrf_token %}
-
     <!-- Navbar -->
     <div class="nav-right">
         {% if user.is_authenticated %}
@@ -73,7 +80,7 @@
                                     "name": document.getElementById("project-title").value,
                                     "date": document.getElementById("selected-date").value,
                                     "csrfmiddlewaretoken": document.querySelector("[name=csrfmiddlewaretoken]").value
-                                }' hx-indicator="#loading">
+                                }' hx-on::afterRequest="handleProjectCreated(event.detail.xhr.responseText)" hx-indicator="#loading">
                             Create Project
                         </button>
                         <div id="loading" class="htmx-indicator">Creating...</div>
@@ -115,10 +122,12 @@
             <div class="task-grid" id="task-{{ task.id }}">
                 <div class="task-content">
                     <input type="checkbox" hx-post="{% url 'toggle_task_done' task.id %}" hx-trigger="change"
-                        hx-target="#task-{{ task.id }}" hx-swap="outerHTML" {% if task.is_done %} checked {% endif %}
+                        hx-target="#task-{{ task.id }}" hx-swap="outerHTML" 
+                        {% if task.is_done %} checked {% endif %}
                         hx-headers='{"X-CSRFToken": getCSRFToken()}'>
                     <!-- Displayed Task Title -->
-                    <div class="task-title" id="task-title-{{ task.id }}" {% if task.is_done %} style="text-decoration: line-through;"
+                    <div class="task-title" id="task-title-{{ task.id }}" 
+                    {% if task.is_done %} style="text-decoration: line-through;"
                         {% endif %}>
                         {{ task.title }}
                     </div>

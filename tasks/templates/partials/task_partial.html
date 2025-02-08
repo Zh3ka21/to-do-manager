@@ -3,18 +3,16 @@
     <div class="task-content">
         <input type="checkbox" hx-post="{% url 'toggle_task_done' task.id %}" hx-trigger="change"
             hx-target="#task-{{ task.id }}" hx-swap="outerHTML" {% if task.is_done %} checked {% endif %}
-            hx-headers='{"X-CSRFToken": getCSRFToken()}'>
+            hx-headers='{"X-CSRFToken": getCSRFToken()}' onchange="toggleTaskStyle('{{ task.id }}', this.checked)">
 
-        <div class="task-title" id="task-title-{{ task.id }}"
+        <div class="task-title" id="task-title-{{ task.id }}" 
         {% if task.is_done %}style="text-decoration: line-through;" {% endif %}>
             {{ task.title }}
         </div>
 
-        <input type="text" class="edit-task-title" id="edit-task-input-{{ task.id }}" name="title" value="{{ task.title }}"
-            style="display: none;" hx-post="{% url 'edit_task' task.id %}"
-            hx-trigger="change, blur, keyup[key=='Enter'] from:#edit-task-input-{{ task.id }}" hx-target="#task-{{ task.id }}"
-            hx-swap="outerHTML">
-
+        <input type="text" class="edit-task-title" id="edit-task-input-{{ task.id }}" name="title"
+            value="{{ task.title }}" style="display: none;" hx-post="{% url 'edit_task' task.id %}"
+            hx-trigger="change, blur, keyup[key=='Enter']" hx-target="#task-{{ task.id }}" hx-swap="outerHTML">
     </div>
 
     <div></div>
@@ -31,7 +29,7 @@
         <div class="icon">
             <img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20"
                 hx-post="{% url 'delete_task' task.id %}" hx-trigger="click" hx-target="#task-{{ task.id }}"
-                hx-swap="delete">
+                hx-swap="delete" hx-headers='{"X-CSRFToken": getCSRFToken()}' onclick="deleteTask('{{ task.id }}')">
         </div>
     </div>
 </div>
