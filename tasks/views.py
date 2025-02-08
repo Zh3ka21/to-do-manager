@@ -1,10 +1,13 @@
+import calendar
+import json
 from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
+from django.forms import ValidationError
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
-from django.utils.timezone import now
+from django.utils.timezone import make_aware, now
 
 from tasks.forms import TaskForm
 
@@ -114,3 +117,55 @@ def edit_task(request, task_id):
             task.save()
         return render(request, "partials/task_partial.html", {"task": task})
     return HttpResponse(status=400)
+
+@login_required
+def project_dates(request):
+    try:
+        month = int(request.GET.get('month'))
+        year = int(request.GET.get('year'))
+
+        # Get the first and last day of the month
+        _, last_day = calendar.monthrange(year, month)
+        start_date = datetime(year, month, 1).date()
+        end_date = datetime(year, month, last_day).date()
+
+        # Query for projects using project_date field
+        projects = Project.objects.filter(
+            user=request.user,
+            project_date__range=[start_date, end_date]
+        ).values_list('project_date', flat=True)
+        
+        # Convert dates to strings
+        dates = [d.strftime('%Y-%m-%d') for d in projects]
+        return JsonResponse(dates, safe=False)
+    except (ValueError, TypeError) as e:
+        return JsonResponse({'error': str(e)}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def create_project(request):
+    try:
+        # Use request.POST instead of json.loads(request.body)
+        project_date = datetime.strptime(
+            request.POST.get('date'), 
+            '%Y-%m-%d'
+        ).date()
+
+        project = Project.objects.create(
+            user=request.user,
+            name=request.POST.get('name', f'Project for {project_date}'),
+            project_date=project_date,
+        )
+
+        return JsonResponse({
+            'message': f"Project '{project.name}' created successfully",
+        })
+
+
+    except ValidationError as e:
+        return JsonResponse({'error': str(e)}, status=400)
+    except Exception as e:
+        print(f"Error creating project: {str(e)}")  # Add detailed logging
+        return JsonResponse({'error': str(e)}, status=500)
+
