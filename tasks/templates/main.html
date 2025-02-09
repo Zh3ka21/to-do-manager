@@ -17,7 +17,8 @@
         const plusIconPath = "{% static 'images/plus.png' %}";
     </script>
 
-    <script src="{% static 'scripts/main.js' %}"></script>
+    <script type="module" src="{% static 'scripts/main.js' %}"></script>
+
     <script src="https://unpkg.com/htmx.org@1.7.0"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
@@ -49,7 +50,7 @@
                 </div>
 
                 <!-- Project Name Display -->
-                <span id="project-name-placeholder" onclick="enableProjectEdit()">
+                <span id="project-name-placeholder">
                     {{ project.name }}
                 </span>
 
@@ -63,10 +64,11 @@
             <div></div>
             <div class="icons-right">
                 <div class="icon">
-                    <img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20" onclick="enableProjectEdit('{{ project.id }}')">
+                    <img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20" 
+                    onclick="main.projectManager.enableProjectEdit('{{ project.id }}')">
                 </div>
                 <div class="icon">
-                    <img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20" onclick="deleteProject('{{ project.id }}')">
+                    <img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20" onclick="main.projectManager.deleteProject()">
                 </div>
             </div>
         </div>
@@ -75,12 +77,12 @@
         <!-- Calendar Modal -->
         <div id="calendar-modal" class="calendar-modal" style="display: none;">
             <div class="calendar-content">
-                <button class="close-button" onclick="closeCalendarModal()">×</button>
+                <button class="close-button" onclick="main.calendar.closeCalendarModal()">×</button>
         
                 <div class="calendar-header">
-                    <button onclick="previousMonth()">&lt;</button>
+                    <button onclick="main.calendar.previousMonth()">&lt;</button>
                     <span id="current-month"></span>
-                    <button onclick="nextMonth()">&gt;</button>
+                    <button onclick="main.calendar.nextMonth()">&gt;</button>
                 </div>
         
                 <div class="calendar-grid" id="weekdays"></div>
@@ -146,12 +148,13 @@
                 <div class="icons-right">
                     <div class="icon">
                         <img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20"
-                            onclick="enableTaskEdit('{{ task.id }}')">
+                            onclick="main.taskManager.enableTaskEdit('{{ task.id }}')">
                     </div>
                     <div class="icon">
                         <img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20"
                             hx-post="{% url 'delete_task' task.id %}" hx-trigger="click" hx-target="#task-{{ task.id }}"
-                            hx-swap="delete" hx-headers='{"X-CSRFToken": ' {{ csrf_token }}'}'>
+                            hx-swap="delete" 
+                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
                     </div>
                 </div>
             </div>
@@ -175,7 +178,7 @@
             {% else %}
             <p>No tasks available.</p>
             {% endif %}
-</div>
+        </div>
     </div>
     {% endif %}
 

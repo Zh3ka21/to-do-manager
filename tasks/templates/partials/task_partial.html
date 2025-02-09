@@ -25,12 +25,12 @@
         </div>
         <div class="icon">
             <img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20"
-                onclick="enableTaskEdit('{{ task.id }}')" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+                onclick="main.taskManager.enableTaskEdit('{{ task.id }}')" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
         </div>
         <div class="icon">
             <img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20"
                 hx-post="{% url 'delete_task' task.id %}" hx-trigger="click" hx-target="#task-{{ task.id }}"
-                hx-swap="delete" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' onclick="deleteTask('{{ task.id }}')">
+                hx-swap="delete" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' onclick="main.taskManager.deleteTask('{{ task.id }}')">
         </div>
     </div>
 </div>
