@@ -165,10 +165,16 @@
                     </div>
                 </div>
                 <div class="icons-right">
+                    <div class="priority-controls">
+                        <div class="icon">🔼</div>
+                        <div class="icon">🔽</div>
+                    </div>
+
                     <div class="icon">
                         <img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20"
                             onclick="main.taskManager.enableTaskEdit('{{ task.id }}')">
                     </div>
+                    
                     <div class="icon">
                         <img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20"
                             hx-post="{% url 'delete_task' task.id %}" hx-trigger="click" hx-target="#task-{{ task.id }}"

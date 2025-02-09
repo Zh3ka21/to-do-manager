@@ -103,30 +103,35 @@ export class TaskManager {
         const taskList = document.getElementById("task-list");
         taskList.innerHTML = "";
 
-        const projectId = document.getElementById("projectID");
+        const projectIdInput = document.getElementById("projectID");
         const projectNamePlaceholder = document.getElementById(
           "project-name-placeholder"
         );
-        const projectIdInput = document.getElementById("projectID");
 
         if (data.context && data.context.project) {
-          projectIdInput.value = data.context.project.id;
+          const project = data.context.project;
+
+          // Update project ID and project name only if they are present
+          projectIdInput.value = project.id || ""; // Ensure empty value if project ID is not available
+          if (projectNamePlaceholder) {
+            projectNamePlaceholder.innerText =
+              project.name || "No project selected"; // Fallback to default text
+          }
         } else {
+          // If no project data, reset values to default
           projectIdInput.value = "";
+          if (projectNamePlaceholder) {
+            projectNamePlaceholder.innerText = "No project selected";
+          }
         }
 
-        if (projectNamePlaceholder && data.context && data.context.project) {
-          projectNamePlaceholder.innerText = data.context.project.name;
-          projectId.value = data.context.project.id;
-        }
+        // Handle tasks
+        if (data.context && data.context.tasks.length > 0) {
+          data.context.tasks.sort((a, b) => a.priority - b.priority);
 
-        if (data.context.tasks.length === 0) {
-          return;
-        }
-
-        data.context.tasks.sort((a, b) => a.priority - b.priority);
-        data.context.tasks.forEach((task) => {
-          const taskHtml = `
+          // Render tasks
+          data.context.tasks.forEach((task) => {
+            const taskHtml = `
             <div class="task-grid" id="task-${task.id}">
               <div class="task-content">
                 <input type="checkbox" 
@@ -186,8 +191,9 @@ export class TaskManager {
               </div>
             </div>
           `;
-          taskList.innerHTML += taskHtml;
-        });
+            taskList.innerHTML += taskHtml;
+          });
+        }
       })
       .catch((error) => console.error("Error fetching tasks:", error));
   }

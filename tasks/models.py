@@ -55,7 +55,7 @@ class Project(models.Model):
             user=user,
             name=name.strip(),
             project_date=project_date,
-            deleted=False
+            deleted=False,
         )
         return True, project, None
 
@@ -77,7 +77,7 @@ class Project(models.Model):
         return f"Project: {self.name}"
 
 class Task(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tasks")
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tasks", null=True, blank=True)
     title = models.CharField(max_length=255)
     deadline = models.DateTimeField()
     is_done = models.BooleanField(default=False)

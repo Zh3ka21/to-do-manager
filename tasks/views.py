@@ -2,6 +2,7 @@ import calendar
 from datetime import date, datetime
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.forms import model_to_dict
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,34 +13,32 @@ from .models import Project, Task
 
 def base_view_handler(request: HttpRequest) -> HttpResponse:
     """Handle default URL routing and display projects/tasks for a selected date."""
-    selected_date = request.GET.get("date")
 
-    if not selected_date:
-        # If no date is selected, use the current date
-        selected_date = date.today().strftime('%Y-%m-%d')
+    selected_date = request.GET.get("date", date.today().strftime('%Y-%m-%d'))
+    project = None
+    tasks = Task.objects.none()  # Default to no tasks
 
     if request.user.is_authenticated:
-        if selected_date:
-            # Retrieve the project for the selected date and user, or return None if it doesnt exist
-            try:
-                project = Project.objects.get(user=request.user, project_date=selected_date, deleted=False)
-            except Project.DoesNotExist:
-                project = None
+        # Fetch the project for the selected date
+        project = Project.get_project_for_date(request.user, selected_date)
+
+        if project:
+            # If a project exists, fetch tasks associated with that project
+            tasks = project.tasks.filter(created_at__date=selected_date).order_by("priority")
         else:
-            # If no date is selected, set project to None
-            project = None
-    else:
-        # If the user is not authenticated, no project
-        project = None
+            # If no project exists, check if there are tasks with no project (project__isnull=True)
+            tasks = Task.objects.filter(
+                Q(project__isnull=True, user=request.user),
+                created_at__date=selected_date
+            ).order_by("priority")
 
-    # If there's a project, fetch tasks associated with it
-    tasks = Task.objects.filter(project=project).order_by("priority") if project else Task.objects.none()
-
+    # If no project or tasks were found, `tasks` will be an empty queryset.
     context = {
         "project": project,
         "tasks": tasks,
         "selected_date": selected_date,
     }
+
     return render(request, "main.html", context)
 
 @login_required
@@ -58,32 +57,38 @@ def add_task(request):
         title = request.POST.get("task_name")
         deadline_time = request.POST.get("deadline_time")
         project_id = request.POST.get("project_id")
+        selected_date = request.POST.get("date", now().date().strftime('%Y-%m-%d'))
 
         if not title:
             return JsonResponse({'error': 'Task title is required'}, status=400)
 
-        try:
-            project = Project.objects.get(id=project_id, user=request.user, deleted=False)
-        except Project.DoesNotExist:
-            return JsonResponse({'error': 'Invalid project'}, status=400)
+        # Find existing project for the date or use the provided project_id
+        project = None
+        if project_id:
+            try:
+                project = Project.objects.get(id=project_id, user=request.user, deleted=False)
+            except Project.DoesNotExist:
+                return JsonResponse({'error': 'Invalid project'}, status=400)
+        else:
+            project = Project.get_project_for_date(request.user, selected_date)
 
         # Handling deadline time
-        if deadline_time:
-            try:
-                deadline = datetime.strptime(deadline_time, "%H:%M").time()
-                deadline = datetime.combine(now().date(), deadline)  
-            except ValueError:
-                return JsonResponse({'error': 'Invalid time format'}, status=400)
-        else:
-            deadline = now()
+        try:
+            deadline = datetime.strptime(deadline_time, "%H:%M").time() if deadline_time else now().time()
+            deadline = datetime.combine(now().date(), deadline)
+        except ValueError:
+            return JsonResponse({'error': 'Invalid time format'}, status=400)
 
-        # Counting lowest priority task
-        lowest_priority_task = Task.objects.filter(project=project).order_by('-priority').first()
+        # Determine priority
+        lowest_priority_task = Task.objects.filter(
+            Q(project=project) | Q(project__isnull=True, user=request.user, created_at__date=selected_date)
+        ).order_by('-priority').first()
         lowest_priority = lowest_priority_task.priority if lowest_priority_task else 0
 
+        # Create task (with or without a project)
         task = Task.objects.create(
             project=project,
-            title=title,
+            title=title.strip(),
             deadline=deadline,
             user=request.user,
             priority=lowest_priority + 1,
@@ -185,20 +190,29 @@ def create_project(request):
         if existing_project:
             return JsonResponse({"error": "You already have a project for this date"}, status=400)
 
-        # can change to _
-        new_project = Project.objects.create(
+        # Get tasks for the given date
+        tasks = Task.objects.filter(user=request.user, deadline__date=project_date, project__isnull=True)
+
+
+        # Create the project
+        project = Project.objects.create(
             user=request.user,
             name=project_name,
             project_date=project_date,
             deleted=False,
         )
+
+        # Associate tasks with the project if any exist
+        if tasks.exists():
+            tasks.update(project=project)
+
         return JsonResponse(
             {
                 "message": "Project created successfully",
             },
         )
-
     return JsonResponse({"error": "Invalid request"}, status=400)
+
 
 @login_required
 def get_tasks_for_date(request):
@@ -206,14 +220,29 @@ def get_tasks_for_date(request):
     if not date:
         return JsonResponse({"error": "Date is required"}, status=400)
 
+    # Fetch the project for the given date and user
     project = Project.objects.filter(user=request.user, project_date=date, deleted=False).first()
-    if not project:
-        return JsonResponse({"context": {"tasks": []}})
 
-    tasks = Task.objects.filter(project=project).values("id", "title", "is_done")
+    # Fetch tasks that are either associated with the project or standalone (no project)
+    if project:
+        tasks_with_project = Task.objects.filter(project=project).values("id", "title", "is_done")
+
+        tasks_without_project = Task.objects.filter(
+            project__isnull=True,
+            user=request.user, deadline=date,
+        ).values("id", "title", "is_done")
+
+        tasks = list(tasks_with_project) + list(tasks_without_project)
+    else:
+        tasks = Task.objects.filter(
+            project__isnull=True,
+            user=request.user,
+            deadline__date=date,
+        ).values("id", "title", "is_done")
+
     context = {
         "tasks": list(tasks),
-        "project": model_to_dict(project),
+        "project": model_to_dict(project) if project else None,
     }
     return JsonResponse({"context": context})
 
