@@ -1,3 +1,6 @@
+{% load static %}
+{% csrf_token %}
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,18 +8,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Task Manager{% endblock %}</title>
-    {% load static %}
     <link rel="stylesheet" href="{% static 'css/main_page_styles.css' %}">
     <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <script>
+        const deleteIconPath = "{% static 'images/delete.png' %}";
+        const calendIconPath = "{% static 'images/calendar.png' %}";
+        const clockIconPath = "{% static 'images/clock.png' %}";
+        const pencilIconPath = "{% static 'images/pencil.png' %}";
+        const plusIconPath = "{% static 'images/plus.png' %}";
+    </script>
+
+    <script type="module" src="{% static 'scripts/main.js' %}"></script>
+
     <script src="https://unpkg.com/htmx.org@1.7.0"></script>
-    {% csrf_token %}
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 
 
 <body hx-boost="true">
+    {% csrf_token %}
     <!-- Navbar -->
     <div class="nav-right">
         {% if user.is_authenticated %}
+        {% csrf_token %}
         <span class="welcome-message">Welcome, {{ user.username }}!</span>
         <a href="{% url 'account_logout' %}" class="btn logout-btn">Logout</a>
         {% else %}
@@ -30,29 +45,94 @@
         <!-- Grid header:  Calendar Project Name Edit Delete -->
         <div class="grid-container">
             <div class="project-header">
-                <div class="icon"><img src="{% static 'images/calendar.png' %}" alt="Calendar Icon" height="20"></div>
-                <div>For Home </div>
+                <div class="icon">
+                    <!-- Calendar icon instead of button -->
+                    <img src="{% static 'images/calendar.png' %}" alt="Calendar Icon" height="20" id="calendar-icon"
+                        style="cursor: pointer;">
+                </div>
+
+                <!-- Project Name Display -->
+                {% if project %}
+                <span id="project-name-placeholder">
+                    {{ project.name }}
+                </span>
+                {% else %}
+                <span id="project-name-placeholder">
+                    No project selected
+                </span>
+                {% endif %}
+
+                <input type="text" hidden id="projectID" value="">
+
+                <!-- Hidden Input for Project Name Editing -->
+                <input type="text" class="edit-project-name" id="edit-project-input" name="name" value="{{ project.name }}"
+                    style="display: none;" >
+
             </div>
             <div></div>
             <div class="icons-right">
-                <div class="icon"><img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20"></div>
-                <div class="icon"><img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20"></div>
+                <div class="icon">
+                    <img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20" 
+                    onclick="main.projectManager.enableProjectEdit('{{ project.id }}')">
+                </div>
+                <div class="icon">
+                    <img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20" onclick="main.projectManager.deleteProject()">
+                </div>
             </div>
         </div>
 
 
+        <!-- Calendar Modal -->
+        <div id="calendar-modal" class="calendar-modal" style="display: none;">
+            <div class="calendar-content">
+                <button class="close-button" onclick="main.calendar.closeCalendarModal()">×</button>
+        
+                <div class="calendar-header">
+                    <button onclick="main.calendar.previousMonth()">&lt;</button>
+                    <span id="current-month"></span>
+                    <button onclick="main.calendar.nextMonth()">&gt;</button>
+                </div>
+        
+                <div class="calendar-grid" id="weekdays"></div>
+                <div class="calendar-grid" id="calendar-days"></div>
+        
+                <div class="project-form" id="project-form" style="display: none;">
+                    <form id="new-project-form">
+                        {% csrf_token %}
+                        <input type="text" id="project-title" name="name" placeholder="Enter project title" required>
+                        <input type="hidden" id="selected-date" name="date">
+                        <button hx-post="/create_project/" hx-trigger="click" hx-vals='js:{
+                                    "name": document.getElementById("project-title").value,
+                                    "date": document.getElementById("selected-date").value,
+                                    "csrfmiddlewaretoken": document.querySelector("[name=csrfmiddlewaretoken]").value
+                                }' hx-on::afterRequest="handleProjectCreated(event.detail.xhr.responseText)" hx-indicator="#loading">
+                            Create Project
+                        </button>
+                        <div id="loading" class="htmx-indicator">Creating...</div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        
         <!-- Grid 1 row: Input Add Task -->
         <div class="input-row">
-            <form id="task-form" hx-post="{% url 'add_task' %}" hx-target="#task-list" hx-swap="beforeend"
-                hx-trigger="submit" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-
-                <!-- TODO: Delete Hardcoded name -->
-                <input type="hidden" name="project_name" value="For Home">
-
+            <form id="task-form" hx-post="{% url 'add_task' %}"
+                hx-target="#task-list"  hx-swap="beforeend"
+                hx-trigger="submit" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' 
+                hx-vals='js:{
+                    "task_name": document.getElementById("new-task").value,
+                    "deadline_time": document.getElementById("deadline-time").value,
+                    "project_id": document.getElementById("projectID").value,
+                }'>
+                
+                {% csrf_token %}
                 <div class="unified-input">
                     <div class="input-icon">
                         <img src="{% static 'images/plus.png' %}" alt="Add Icon" height="20">
                     </div>
+
+                    <input type="hidden" id="projectID" name="project_id">
                     <input type="text" placeholder="Add new task..." id="new-task" name="task_name" required>
 
                     <!-- Time input with clock icon -->
@@ -60,13 +140,15 @@
                         <img src="{% static 'images/clock.png' %}" alt="Deadline Icon" height="20"
                             onclick="document.getElementById('deadline-time').showPicker();">
                     </div>
-                    <input type="time" id="deadline-time" name="deadline_time">
+                    <input type="time" id="deadline-time" name="deadline_time" required>
+                
+                <!-- Hidden input for project ID -->
+                <input type="text" hidden id="projectID" value="">
 
-                    <button type="submit">Add Task</button>
+                <button type="submit">Add Task</button>
                 </div>
             </form>
         </div>
-
 
         <!-- Grid 2 row: Dynamic part of different tasks -->
         <div id="task-list">
@@ -75,16 +157,13 @@
             <div class="task-grid" id="task-{{ task.id }}">
                 <div class="task-content">
                     <input type="checkbox" hx-post="{% url 'toggle_task_done' task.id %}" hx-trigger="change"
-                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' hx-target="#task-{{ task.id }}"
-                        hx-swap="outerHTML" {% if task.is_done %}checked{% endif %}>
-
-                    <div {% if task.is_done %} style="text-decoration: line-through;" {% endif %}>
+                        hx-target="#task-{{ task.id }}" hx-swap="outerHTML" {% if task.is_done %} checked {% endif %}
+                        hx-headers='{"X-CSRFToken": getCSRFToken()}'>
+                    <div class="task-title" id="task-title-{{ task.id }}" {% if task.is_done %}
+                        style="text-decoration: line-through;" {% endif %}>
                         {{ task.title }}
                     </div>
                 </div>
-
-                <div></div>
-
                 <div class="icons-right">
                     <div class="priority-controls">
                         <div class="icon">🔼</div>
@@ -92,14 +171,15 @@
                     </div>
 
                     <div class="icon">
-                        <img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20">
+                        <img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20"
+                            onclick="main.taskManager.enableTaskEdit('{{ task.id }}')">
                     </div>
-
+                    
                     <div class="icon">
                         <img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20"
                             hx-post="{% url 'delete_task' task.id %}" hx-trigger="click" hx-target="#task-{{ task.id }}"
-                            hx-swap="delete" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-
+                            hx-swap="delete" 
+                            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
                     </div>
                 </div>
             </div>
@@ -109,19 +189,5 @@
     </div>
     {% endif %}
 
-
 </body>
-
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-<script>
-    document.getElementById("task-form").addEventListener("htmx:afterRequest", function () {
-        document.getElementById("new-task").value = "";
-        document.getElementById("deadline-time").value = "";
-    });
-
-    document.body.addEventListener('htmx:configRequest', function (event) {
-        event.detail.headers['X-CSRFToken'] = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    });
-</script>
-
 </html>

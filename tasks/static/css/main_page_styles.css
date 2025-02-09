@@ -41,7 +41,7 @@ body {
 
 .task-grid {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 1fr 0 auto;
   gap: 10px;
   padding: 15px;
   align-items: center;
@@ -62,10 +62,15 @@ body {
   min-width: 0;
 }
 
+.task-content {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Add spacing between checkbox and task title */
+}
+
 .task-content div {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-wrap: break-word;
+  white-space: normal;
   flex: 1;
 }
 
@@ -194,5 +199,188 @@ input[type="checkbox"] {
 
   input[type="text"] {
     padding: 0 4px;
+  }
+}
+
+/* -------------Modal Calendar------------ */
+
+.calendar-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.calendar-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.weekday {
+  text-align: center;
+  font-weight: bold;
+  padding: 8px;
+}
+
+.calendar-day {
+  text-align: center;
+  padding: 8px;
+  cursor: pointer;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.calendar-day:hover {
+  background-color: #f0f0f0;
+}
+
+.calendar-day.other-month {
+  color: #ccc;
+}
+
+.calendar-day.selected {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.calendar-day.has-project {
+  border: 2px solid #3b82f6;
+}
+
+.project-form {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.project-form input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.project-form button {
+  width: 100%;
+  padding: 8px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.project-form button:hover {
+  background-color: #2563eb;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: none;
+  background: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.calendar-day.today {
+  border: 2px solid blue; /* Ensure only today's date gets a border */
+  border-radius: 5px;
+}
+
+/* ----------Pagination controls------------ */
+.pagination {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.pagination a {
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  margin: 0 5px;
+  text-decoration: none;
+  color: #333;
+}
+
+.pagination a:hover {
+  background-color: #f0f0f0;
+}
+
+.pagination span {
+  font-weight: bold;
+}
+
+/* ---------Duplicates Possibly------------ */
+.task-grid {
+  display: grid;
+  grid-template-columns: 1fr 0 auto; /* Three columns: content, spacer, icons */
+  gap: 10px;
+  padding: 15px;
+  align-items: center;
+  border-bottom: 1px solid #ddd;
+  transition: background-color 0.2s;
+  background-color: white;
+  width: 100%;
+}
+
+.task-grid:hover {
+  background-color: #f5f5f5;
+}
+
+.task-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  grid-column: 1; /* Explicitly place in first column */
+}
+
+.task-content div {
+  word-wrap: break-word;
+  white-space: normal;
+  flex: 1;
+}
+
+.icons-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  grid-column: 3; /* Explicitly place in last column */
+  justify-self: end;
+}
+
+/* Maintain responsive design for smaller screens */
+@media (max-width: 600px) {
+  .icons-right {
+    gap: 4px;
+  }
+
+  .task-grid {
+    gap: 5px;
+    padding: 10px;
   }
 }
