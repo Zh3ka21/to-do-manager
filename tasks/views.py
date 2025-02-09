@@ -12,7 +12,7 @@ from .models import Project, Task
 
 def base_view_handler(request: HttpRequest) -> HttpResponse:
     """Handle default URL routing and display projects/tasks for a selected date."""
-    selected_date = request.GET.get("date")  # Get date from request params
+    selected_date = request.GET.get("date")
 
     if not selected_date:
         # If no date is selected, use the current date
@@ -43,7 +43,7 @@ def base_view_handler(request: HttpRequest) -> HttpResponse:
     return render(request, "main.html", context)
 
 @login_required
-def toggle_task_done(request, task_id: int) -> HttpResponse:
+def toggle_task_done(request, task_id) -> HttpResponse:
     """Toggle the completion status of a task."""
     task = get_object_or_404(Task, id=task_id, user=request.user)
     task.is_done = not task.is_done  # Toggle status
@@ -55,19 +55,19 @@ def toggle_task_done(request, task_id: int) -> HttpResponse:
 @login_required
 def add_task(request):
     if request.method == "POST":
-        title = request.POST.get("task_name")  # Match input field name
+        title = request.POST.get("task_name")
         deadline_time = request.POST.get("deadline_time")
-        project_name = request.POST.get("project_name")
+        project_id = request.POST.get("project_id")
 
         if not title:
             return JsonResponse({'error': 'Task title is required'}, status=400)
 
         try:
-            project = Project.objects.get(name=project_name, user=request.user, deleted=False)
+            project = Project.objects.get(id=project_id, user=request.user, deleted=False)
         except Project.DoesNotExist:
             return JsonResponse({'error': 'Invalid project'}, status=400)
 
-
+        # Handling deadline time
         if deadline_time:
             try:
                 deadline = datetime.strptime(deadline_time, "%H:%M").time()
@@ -77,7 +77,7 @@ def add_task(request):
         else:
             deadline = now()
 
-        # Counting lowest priority task to append to bottom of task list
+        # Counting lowest priority task
         lowest_priority_task = Task.objects.filter(project=project).order_by('-priority').first()
         lowest_priority = lowest_priority_task.priority if lowest_priority_task else 0
 
@@ -86,7 +86,7 @@ def add_task(request):
             title=title,
             deadline=deadline,
             user=request.user,
-            priority = lowest_priority+1,
+            priority=lowest_priority + 1,
         )
 
         return render(request, 'partials/task_partial.html', {'task': task})
@@ -185,8 +185,18 @@ def create_project(request):
         if existing_project:
             return JsonResponse({"error": "You already have a project for this date"}, status=400)
 
-        new_project = Project.objects.create(user=request.user, name=project_name, date=project_date, deleted=False)
-        return JsonResponse({"message": "Project created successfully", "project_id": new_project.id})
+        # can change to _
+        new_project = Project.objects.create(
+            user=request.user,
+            name=project_name,
+            project_date=project_date,
+            deleted=False,
+        )
+        return JsonResponse(
+            {
+                "message": "Project created successfully",
+            },
+        )
 
     return JsonResponse({"error": "Invalid request"}, status=400)
 

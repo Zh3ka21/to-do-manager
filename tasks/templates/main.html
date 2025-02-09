@@ -1,4 +1,6 @@
 {% load static %}
+{% csrf_token %}
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -50,9 +52,15 @@
                 </div>
 
                 <!-- Project Name Display -->
+                {% if project %}
                 <span id="project-name-placeholder">
                     {{ project.name }}
                 </span>
+                {% else %}
+                <span id="project-name-placeholder">
+                    No project selected
+                </span>
+                {% endif %}
 
                 <input type="text" hidden id="projectID" value="">
 
@@ -106,17 +114,25 @@
             </div>
         </div>
 
-
+        
         <!-- Grid 1 row: Input Add Task -->
         <div class="input-row">
-            <form id="task-form" hx-post="{% url 'add_task' %}" hx-target="#task-list" hx-swap="beforeend"
-                hx-trigger="submit" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+            <form id="task-form" hx-post="{% url 'add_task' %}"
+                hx-target="#task-list"  hx-swap="beforeend"
+                hx-trigger="submit" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' 
+                hx-vals='js:{
+                    "task_name": document.getElementById("new-task").value,
+                    "deadline_time": document.getElementById("deadline-time").value,
+                    "project_id": document.getElementById("projectID").value,
+                }'>
+                
                 {% csrf_token %}
-                <input type="hidden" name="project_name" value="For Home">
                 <div class="unified-input">
                     <div class="input-icon">
                         <img src="{% static 'images/plus.png' %}" alt="Add Icon" height="20">
                     </div>
+
+                    <input type="hidden" id="projectID" name="project_id">
                     <input type="text" placeholder="Add new task..." id="new-task" name="task_name" required>
 
                     <!-- Time input with clock icon -->
@@ -125,8 +141,11 @@
                             onclick="document.getElementById('deadline-time').showPicker();">
                     </div>
                     <input type="time" id="deadline-time" name="deadline_time" required>
+                
+                <!-- Hidden input for project ID -->
+                <input type="text" hidden id="projectID" value="">
 
-                    <button type="submit">Add Task</button>
+                <button type="submit">Add Task</button>
                 </div>
             </form>
         </div>
@@ -159,24 +178,6 @@
                 </div>
             </div>
             {% endfor %}
-            
-            <!-- Pagination Controls -->
-            <div class="pagination">
-                {% if tasks.has_previous %}
-                <a hx-get="?date={{ selected_date }}&page={{ tasks.previous_page_number }}" hx-target="#task-list"
-                    hx-swap="outerHTML">Previous</a>
-                {% endif %}
-
-                <span>Page {{ tasks.number }} of {{ tasks.paginator.num_pages }}</span>
-
-                {% if tasks.has_next %}
-                <a hx-get="?date={{ selected_date }}&page={{ tasks.next_page_number }}" hx-target="#task-list"
-                    hx-swap="outerHTML">Next</a>
-                {% endif %}
-            </div>
-            
-            {% else %}
-            <p>No tasks available.</p>
             {% endif %}
         </div>
     </div>

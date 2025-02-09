@@ -58,6 +58,15 @@ class Main {
 
 const main = new Main();
 
+function handleProjectCreated(responseText) {
+  const response = JSON.parse(responseText);
+  if (response.error) {
+    alert(response.error); // Show error alert
+  } else {
+    alert(response.message); // Show success message
+  }
+}
+
 if (document.getElementById("task-form")) {
   document
     .getElementById("task-form")

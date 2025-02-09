@@ -107,6 +107,13 @@ export class TaskManager {
         const projectNamePlaceholder = document.getElementById(
           "project-name-placeholder"
         );
+        const projectIdInput = document.getElementById("projectID");
+
+        if (data.context && data.context.project) {
+          projectIdInput.value = data.context.project.id;
+        } else {
+          projectIdInput.value = "";
+        }
 
         if (projectNamePlaceholder && data.context && data.context.project) {
           projectNamePlaceholder.innerText = data.context.project.name;
@@ -114,7 +121,6 @@ export class TaskManager {
         }
 
         if (data.context.tasks.length === 0) {
-          taskList.innerHTML = "<p>No tasks for this day.</p>";
           return;
         }
 
