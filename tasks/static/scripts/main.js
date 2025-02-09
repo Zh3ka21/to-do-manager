@@ -114,7 +114,6 @@ function submitEdit(taskId, newValue) {
     .find((row) => row.startsWith("csrftoken="))
     ?.split("=")[1];
 
-  console.log("CSRF Token:", csrftoken);
   // Make the fetch request
   fetch(`/task/edit/${taskId}/`, {
     method: "POST",
@@ -277,14 +276,20 @@ function fetchTasksForDate(dateString) {
       const taskList = document.getElementById("task-list");
       taskList.innerHTML = ""; // Clear existing tasks
 
-      console.log(data);
+      console.log(data.context);
+
+      const projectId = document.getElementById("projectID");
 
       // Update the project name
       const projectNamePlaceholder = document.getElementById(
         "project-name-placeholder"
       );
+
       if (projectNamePlaceholder && data.context && data.context.project) {
+        // Update the project name in the UI
         projectNamePlaceholder.innerText = data.context.project.name;
+        projectId.value = data.context.project.id;
+        console.log("In FEtch after writting in:", projectId.value);
       }
 
       // Check if there are no tasks
@@ -298,9 +303,10 @@ function fetchTasksForDate(dateString) {
 
       // Loop through each task and build the HTML dynamically
       data.context.tasks.forEach((task) => {
+        // Add projectId to the `enableProjectEdit` function call
         const taskHtml = `
         <div class="task-grid" id="task-${task.id}">
-            <div class="task-content">
+          <div class="task-content">
             <!-- Checkbox for marking task as done -->
             <input type="checkbox" 
                 ${task.is_done ? "checked" : ""}
@@ -313,10 +319,8 @@ function fetchTasksForDate(dateString) {
             
             <!-- Task Title -->
             <div class="task-title" id="task-title-${task.id}" 
-                 style="${
-                   task.is_done ? "text-decoration: line-through;" : ""
-                 }">
-                ${task.title}
+                style="${task.is_done ? "text-decoration: line-through;" : ""}">
+              ${task.title}
             </div>
 
             <!-- Hidden input for editing task title -->
@@ -331,39 +335,34 @@ function fetchTasksForDate(dateString) {
                 hx-target="#task-${task.id}"
                 hx-swap="outerHTML"
                 hx-headers='{"X-CSRFToken": getCSRFToken()}'>
+          </div>
+
+          <div></div>
+
+          <div class="icons-right">
+            <div class="priority-controls">
+              <div class="icon" onclick="changePriority(${task.id}, 1)">🔼</div>
+              <div class="icon" onclick="changePriority(${
+                task.id
+              }, -1)">🔽</div>
             </div>
 
-            <div></div>
-
-            <div class="icons-right">
-                <div class="priority-controls">
-                    <div class="icon" onclick="changePriority(${
-                      task.id
-                    }, 1)">🔼</div>
-                    <div class="icon" onclick="changePriority(${
-                      task.id
-                    }, -1)">🔽</div>
-                </div>
-
-                <div class="icon">
-                    <img src="${pencilIconPath}" 
-                         alt="Edit Icon" 
-                         height="20" 
-                         onclick="enableTaskEdit('${task.id}')">
-                </div>
-
-                <div class="icon">
-                    <img src="${deleteIconPath}" 
-                         alt="Delete Icon" 
-                         height="20"
-                         hx-trigger="click"
-                         hx-target="#task-${task.id}"
-                         hx-swap="delete"
-                         hx-headers='{"X-CSRFToken": getCSRFToken()}'
-                         onclick="deleteTask('${task.id}')">
-                </div>
+            <div class="icon">
+              <img src="${pencilIconPath}" alt="Edit Icon" height="20" 
+                  onclick="enableProjectEdit('${data.context.project.id}')">
             </div>
-        </div>`;
+            
+            <div class="icon">
+              <img src="${deleteIconPath}" alt="Delete Icon" height="20"
+                  hx-trigger="click"
+                  hx-target="#task-${task.id}"
+                  hx-swap="delete"
+                  hx-headers='{"X-CSRFToken": getCSRFToken()}'
+                  onclick="deleteTask('${task.id}')">
+            </div>
+          </div>
+        </div>
+      `;
 
         taskList.innerHTML += taskHtml;
       });
@@ -371,7 +370,6 @@ function fetchTasksForDate(dateString) {
     .catch((error) => console.error("Error fetching tasks:", error));
 }
 
-// Add this new function to handle the checkbox toggle styling
 function toggleTaskStyle(taskId, isChecked) {
   const taskTitle = document.getElementById(`task-title-${taskId}`);
   if (taskTitle) {
@@ -484,4 +482,143 @@ function handleProjectCreated(response) {
   }
   fetchProjects();
   closeCalendarModal();
+}
+
+function enableProjectEdit() {
+  const titleElement = document.getElementById("project-name-placeholder");
+  const inputElement = document.getElementById("edit-project-input");
+
+  if (!titleElement || !inputElement) {
+    console.error("Elements not found for project");
+    return;
+  }
+
+  // Set input value to the current project name before showing it
+  inputElement.value = titleElement.innerText.trim();
+  inputElement.dataset.originalValue = inputElement.value;
+
+  titleElement.style.display = "none";
+  inputElement.style.display = "inline";
+  inputElement.focus();
+  inputElement.select();
+
+  // Remove existing event listeners before adding new ones
+  inputElement.removeEventListener("keyup", handleKeyup);
+  inputElement.removeEventListener("blur", handleBlur);
+
+  function handleKeyup(e) {
+    if (e.key === "Enter") {
+      submitProjectEdit(inputElement.value);
+    } else if (e.key === "Escape") {
+      cancelProjectEdit();
+    }
+  }
+
+  function handleBlur() {
+    submitProjectEdit(inputElement.value);
+  }
+
+  inputElement.addEventListener("keyup", handleKeyup);
+  inputElement.addEventListener("blur", handleBlur);
+}
+
+function submitProjectEdit(newValue) {
+  const projectId = document.getElementById("projectID");
+
+  if (!projectId) {
+    console.error("Project ID is missing!");
+    return;
+  }
+
+  const csrftoken = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("csrftoken="))
+    ?.split("=")[1];
+
+  fetch(`/update_project_name/${projectId.value}/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "X-CSRFToken": csrftoken,
+    },
+    body: `name=${encodeURIComponent(newValue)}`,
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.text();
+    })
+    .then(() => {
+      const projectElement = document.getElementById(
+        "project-name-placeholder"
+      );
+      const inputElement = document.getElementById("edit-project-input");
+
+      if (!projectElement || !inputElement) {
+        console.error("Elements not found for project");
+        return;
+      }
+
+      // Update the UI
+      projectElement.innerText = newValue;
+      projectElement.style.display = "inline";
+      inputElement.style.display = "none";
+
+      showAlert("Project updated successfully!");
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      showAlert("Failed to update project!", "error");
+      cancelProjectEdit();
+    });
+}
+
+function cancelProjectEdit() {
+  const titleElement = document.getElementById("project-name-placeholder");
+  const inputElement = document.getElementById("edit-project-input");
+
+  if (!titleElement || !inputElement) {
+    console.error("Elements not found for project");
+    return;
+  }
+
+  // Reset to original value if available
+  if (inputElement.dataset.originalValue) {
+    inputElement.value = inputElement.dataset.originalValue;
+  }
+
+  titleElement.style.display = "block";
+  inputElement.style.display = "none";
+}
+
+function deleteProject() {
+  const projectId = document.getElementById("projectID");
+  console.log("Deleting Project ID:", projectId.value);
+
+  const csrftoken = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("csrftoken="))
+    ?.split("=")[1];
+
+  fetch(`soft_delete_project/${projectId.value}/`, {
+    method: "POST", // Ensure this is POST
+    headers: {
+      "X-CSRFToken": csrftoken, // CSRF token required
+    },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to delete project");
+      }
+      return response.text();
+    })
+    .then(() => {
+      console.log("Project deleted successfully");
+      openCalendarModal();
+    })
+    .catch((error) => {
+      console.error("Error deleting project:", error);
+      showAlert("Failed to delete project!", "error");
+    });
 }

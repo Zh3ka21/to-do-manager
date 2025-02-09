@@ -13,6 +13,7 @@ class Project(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     project_date = models.DateField()
+    deleted = models.BooleanField(default=False)
 
     def add_task(self, task: "Task") -> None:
         """Add on a task to the project.
@@ -33,6 +34,11 @@ class Project(models.Model):
     def delete_project(self) -> None:
         """Delete the project."""
         self.delete()
+
+    def soft_delete(self):
+        """Soft delete the project."""
+        self.deleted = True
+        self.save()
 
     def __str__(self) -> str:
         return f"Project: {self.name}\n"

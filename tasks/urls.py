@@ -10,7 +10,9 @@ from .views import (
     get_tasks_for_date,
     move_task,
     project_dates,
+    soft_delete_project,
     toggle_task_done,
+    update_project_name,
 )
 
 urlpatterns = [
@@ -27,4 +29,7 @@ urlpatterns = [
     path('create_project/', create_project, name='create_project'),
 
     path('get_tasks_for_date/', get_tasks_for_date, name='get_tasks_for_date'),
+
+    path('update_project_name/<int:project_id>/', update_project_name, name='update_project_name'),
+    path('soft_delete_project/<int:project_id>/', soft_delete_project, name='soft_delete_project'),
 ]

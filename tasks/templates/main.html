@@ -47,13 +47,28 @@
                     <img src="{% static 'images/calendar.png' %}" alt="Calendar Icon" height="20" id="calendar-icon"
                         style="cursor: pointer;">
                 </div>
-                <div id="project-name-placeholder">No project assigned</div> <!-- Placeholder for project name -->
+
+                <!-- Project Name Display -->
+                <span id="project-name-placeholder" onclick="enableProjectEdit()">
+                    {{ project.name }}
+                </span>
+
+                <input type="text" hidden id="projectID" value="">
+
+                <!-- Hidden Input for Project Name Editing -->
+                <input type="text" class="edit-project-name" id="edit-project-input" name="name" value="{{ project.name }}"
+                    style="display: none;" >
 
             </div>
             <div></div>
             <div class="icons-right">
-                <div class="icon"><img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20"></div>
-                <div class="icon"><img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20"></div>
+                <div class="icon">
+                    <img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20" onclick="enableProjectEdit('{{ project.id }}')">
+                </div>
+                <div class="icon">
+                    <img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20" onclick="deleteProject('{{ project.id }}')">
+                </div>
+
             </div>
         </div>
 

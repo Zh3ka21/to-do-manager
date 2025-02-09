@@ -23,7 +23,7 @@ def base_view_handler(request: HttpRequest) -> HttpResponse:
         if selected_date:
             # Retrieve the project for the selected date and user, or return None if it doesnt exist
             try:
-                project = Project.objects.get(user=request.user, project_date=selected_date)
+                project = Project.objects.get(user=request.user, project_date=selected_date, deleted=False)
             except Project.DoesNotExist:
                 project = None
         else:
@@ -64,7 +64,7 @@ def add_task(request):
             return JsonResponse({'error': 'Task title is required'}, status=400)
 
         try:
-            project = Project.objects.get(name=project_name, user=request.user)
+            project = Project.objects.get(name=project_name, user=request.user, deleted=False)
         except Project.DoesNotExist:
             return JsonResponse({'error': 'Invalid project'}, status=400)
 
@@ -161,9 +161,10 @@ def project_dates(request):
         # Query for projects using project_date field
         projects = Project.objects.filter(
             user=request.user,
-            project_date__range=[start_date, end_date]
+            project_date__range=[start_date, end_date],
+            deleted=False,
         ).values_list('project_date', flat=True)
-        
+
         # Convert dates to strings
         dates = [d.strftime('%Y-%m-%d') for d in projects]
         return JsonResponse(dates, safe=False)
@@ -181,11 +182,11 @@ def create_project(request):
         if not project_name:
             return JsonResponse({"error": "Project title cannot be empty"}, status=400)
 
-        existing_project = Project.objects.filter(user=request.user, project_date=project_date).first()
+        existing_project = Project.objects.filter(user=request.user, project_date=project_date, deleted=False).first()
         if existing_project:
             return JsonResponse({"error": "You already have a project for this date"}, status=400)
 
-        new_project = Project.objects.create(user=request.user, name=project_name, date=project_date)
+        new_project = Project.objects.create(user=request.user, name=project_name, date=project_date, deleted=False)
         return JsonResponse({"message": "Project created successfully", "project_id": new_project.id})
 
     return JsonResponse({"error": "Invalid request"}, status=400)
@@ -196,7 +197,7 @@ def get_tasks_for_date(request):
     if not date:
         return JsonResponse({"error": "Date is required"}, status=400)
 
-    project = Project.objects.filter(user=request.user, project_date=date).first()
+    project = Project.objects.filter(user=request.user, project_date=date, deleted=False).first()
     if not project:
         return JsonResponse({"context": {"tasks": []}})
 
@@ -206,3 +207,22 @@ def get_tasks_for_date(request):
         "project": model_to_dict(project),
     }
     return JsonResponse({"context": context})
+
+def update_project_name(request, project_id):
+    if request.method == 'POST':
+        project = Project.objects.get(id=project_id, deleted=False)
+        new_name = request.POST.get('name')
+
+        if new_name:
+            project.update_project(new_name)
+            return JsonResponse({'success': True, 'name': new_name})
+
+        return JsonResponse({'error': 'Invalid name'})
+    return JsonResponse({'error': 'Invalid request method'})
+
+def soft_delete_project(request, project_id):
+    if request.method == 'POST':
+        project = Project.objects.get(id=project_id, deleted=False)
+        project.soft_delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'error': 'Invalid request method'})
