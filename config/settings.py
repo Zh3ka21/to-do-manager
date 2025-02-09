@@ -8,8 +8,10 @@ For more information on this file, see
 import os
 from pathlib import Path
 
+import pymysql
 from dotenv import load_dotenv
 
+pymysql.install_as_MySQLdb()
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -18,8 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', '')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True')
+DEBUG = os.getenv('DEBUG', 'False')
 
 ALLOWED_HOSTS: list[str] = []
 
@@ -71,9 +72,17 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
-    "default": {
+    "sqlite": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+    },
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "todomanager",
+        "USER": os.getenv("USER"),
+        "PASSWORD": os.getenv("PASSWORD"),
+        "HOST": "localhost",
+        "PORT": os.getenv("PORT"),
     },
 }
 

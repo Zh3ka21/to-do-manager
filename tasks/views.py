@@ -45,8 +45,7 @@ def base_view_handler(request: HttpRequest) -> HttpResponse:
 def toggle_task_done(request, task_id) -> HttpResponse:
     """Toggle the completion status of a task."""
     task = get_object_or_404(Task, id=task_id, user=request.user)
-    task.is_done = not task.is_done  # Toggle status
-    task.save()
+    task.toggle_done()
 
     # Return the updated task HTML after the toggle
     return render(request, 'partials/task_partial.html', {'task': task})
