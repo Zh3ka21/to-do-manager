@@ -83,8 +83,6 @@ function enableTaskEdit(taskId) {
 
   // Handle Enter key submission
   inputElement.addEventListener("keyup", function handleKeyup(e) {
-    console.log("Key pressed:", e.key);
-
     if (e.key === "Enter") {
       console.log("Enter pressed - submitting edit");
       submitEdit(taskId, inputElement.value);
@@ -276,8 +274,6 @@ function fetchTasksForDate(dateString) {
       const taskList = document.getElementById("task-list");
       taskList.innerHTML = ""; // Clear existing tasks
 
-      console.log(data.context);
-
       const projectId = document.getElementById("projectID");
 
       // Update the project name
@@ -289,7 +285,6 @@ function fetchTasksForDate(dateString) {
         // Update the project name in the UI
         projectNamePlaceholder.innerText = data.context.project.name;
         projectId.value = data.context.project.id;
-        console.log("In FEtch after writting in:", projectId.value);
       }
 
       // Check if there are no tasks
@@ -341,15 +336,17 @@ function fetchTasksForDate(dateString) {
 
           <div class="icons-right">
             <div class="priority-controls">
-              <div class="icon" onclick="changePriority(${task.id}, 1)">🔼</div>
-              <div class="icon" onclick="changePriority(${
-                task.id
-              }, -1)">🔽</div>
+              <div class="icon" onclick="changePriority(${task.id}, 1)">
+              🔼
+              </div>
+              <div class="icon" onclick="changePriority(${task.id}, -1)">
+              🔽
+              </div>
             </div>
 
             <div class="icon">
               <img src="${pencilIconPath}" alt="Edit Icon" height="20" 
-                  onclick="enableProjectEdit('${data.context.project.id}')">
+                  onclick="enableTaskEdit('${task.id}')">
             </div>
             
             <div class="icon">
@@ -485,6 +482,8 @@ function handleProjectCreated(response) {
 }
 
 function enableProjectEdit() {
+  console.log("EnableProjectEdit");
+
   const titleElement = document.getElementById("project-name-placeholder");
   const inputElement = document.getElementById("edit-project-input");
 
