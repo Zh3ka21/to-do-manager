@@ -84,6 +84,11 @@ document.addEventListener("htmx:configRequest", (event) => {
   event.detail.headers["X-CSRFToken"] = getCSRFToken();
 });
 
+function getCSRFToken() {
+  const csrfCookie = document.cookie.match(/csrftoken=([^;]+)/);
+  return csrfCookie ? csrfCookie[1] : null;
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   const calendarIcon = document.getElementById("calendar-icon");
   if (calendarIcon) {
@@ -93,13 +98,3 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   main.calendar.initCalendar();
 });
-
-// document.addEventListener("DOMContentLoaded", function () {
-//   const calendarButton = document.querySelector("[data-calendar-trigger]");
-//   if (calendarButton) {
-//     calendarButton.addEventListener("click", openCalendarModal);
-//   }
-//   initCalendar();
-// });
-
-// import { Calendar } from ".Calendar.js";

@@ -118,8 +118,7 @@ export class TaskManager {
           return;
         }
 
-        data.context.tasks.sort((a, b) => b.priority - a.priority);
-
+        data.context.tasks.sort((a, b) => a.priority - b.priority);
         data.context.tasks.forEach((task) => {
           const taskHtml = `
             <div class="task-grid" id="task-${task.id}">
