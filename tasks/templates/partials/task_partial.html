@@ -1,9 +1,10 @@
 {% load static %}
+{% csrf_token %}
 <div class="task-grid" id="task-{{ task.id }}">
     <div class="task-content">
         <input type="checkbox" hx-post="{% url 'toggle_task_done' task.id %}" hx-trigger="change"
             hx-target="#task-{{ task.id }}" hx-swap="outerHTML" {% if task.is_done %} checked {% endif %}
-            hx-headers='{"X-CSRFToken": getCSRFToken()}' onchange="toggleTaskStyle('{{ task.id }}', this.checked)">
+            hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' onchange="toggleTaskStyle('{{ task.id }}', this.checked)">
 
         <div class="task-title" id="task-title-{{ task.id }}" 
         {% if task.is_done %}style="text-decoration: line-through;" {% endif %}>
@@ -24,12 +25,12 @@
         </div>
         <div class="icon">
             <img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20"
-                onclick="enableTaskEdit('{{ task.id }}')">
+                onclick="enableTaskEdit('{{ task.id }}')" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
         </div>
         <div class="icon">
             <img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20"
                 hx-post="{% url 'delete_task' task.id %}" hx-trigger="click" hx-target="#task-{{ task.id }}"
-                hx-swap="delete" hx-headers='{"X-CSRFToken": getCSRFToken()}' onclick="deleteTask('{{ task.id }}')">
+                hx-swap="delete" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' onclick="deleteTask('{{ task.id }}')">
         </div>
     </div>
 </div>

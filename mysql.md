@@ -15,9 +15,7 @@ SELECT project_id, COUNT(project_id) as task_count
  order by task_count DESC;
 ```
 
-3. Get the count of all tasks in each project, order by project names. 
-
-!!!May be a good option to consider left join!!!
+3. Get the count of all tasks in each project, order by project names.
 
 ```
 SELECT project_id, COUNT(project_id) as task_count
@@ -36,16 +34,26 @@ SELECT tasks.name from tasks
  where projects.name like 'N%';
 ```
 
-5. 
+5. Get the list of all projects with 'a' in a middle, show task count
+   near each project.
 
-
+```
+SELECT projects.name,
+       COUNT(tasks.project_id) AS task_count
+FROM projects
+LEFT JOIN tasks
+  ON tasks.project_id = projects.id
+WHERE projects.name LIKE '%a%'
+  AND LENGTH(projects.name) > 1
+GROUP BY projects.id
+ORDER BY projects.name;
+```
 
 6. Get the list of tasks with duplicate names, order alphabetically.
 
 ```
-SELECT tasks.name, Count(tasks.name) as counter from tasks 
+SELECT tasks.name, Count(tasks.name) as counter from tasks
  group by tasks.name
  having counter > 1
  order by tasks.name ASC;
 ```
-

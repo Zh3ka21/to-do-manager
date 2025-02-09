@@ -1,5 +1,4 @@
 import calendar
-import json
 from datetime import date, datetime
 
 from django.contrib.auth.decorators import login_required

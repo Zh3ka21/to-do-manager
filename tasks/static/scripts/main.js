@@ -78,6 +78,8 @@ function enableTaskEdit(taskId) {
   inputElement.focus();
   inputElement.select();
 
+  console.log("Updating task:", taskId, "with value:", inputElement.value);
+
   // Store original value in case we need to revert
   inputElement.dataset.originalValue = inputElement.value;
 
@@ -129,11 +131,10 @@ function submitEdit(taskId, newValue) {
       return response.text();
     })
     .then((html) => {
-      // Update the UI
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = html;
-      const taskElement = document.getElementById(`task-${taskId}`);
-      taskElement.replaceWith(tempDiv.firstElementChild);
+      console.log("Server response HTML:", html); // Debugging log
+
+      titleElement.value = inputElement.value;
+      console.log(titleElement.value);
 
       // Show success message
       showAlert("Task updated successfully!");
@@ -377,10 +378,7 @@ function toggleTaskStyle(taskId, isChecked) {
 function deleteTask(taskId) {
   console.log("Deleting Task ID:", taskId);
 
-  const csrftoken = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith("csrftoken="))
-    ?.split("=")[1];
+  const csrftoken = getCSRFToken();
 
   fetch(`delete-task/${taskId}/`, {
     method: "POST", // Ensure this is POST

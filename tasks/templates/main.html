@@ -68,7 +68,6 @@
                 <div class="icon">
                     <img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20" onclick="deleteProject('{{ project.id }}')">
                 </div>
-
             </div>
         </div>
 
@@ -111,7 +110,6 @@
             <form id="task-form" hx-post="{% url 'add_task' %}" hx-target="#task-list" hx-swap="beforeend"
                 hx-trigger="submit" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
                 {% csrf_token %}
-                <!-- TODO: Delete Hardcoded name -->
                 <input type="hidden" name="project_name" value="For Home">
                 <div class="unified-input">
                     <div class="input-icon">
@@ -124,7 +122,7 @@
                         <img src="{% static 'images/clock.png' %}" alt="Deadline Icon" height="20"
                             onclick="document.getElementById('deadline-time').showPicker();">
                     </div>
-                    <input type="time" id="deadline-time" name="deadline_time">
+                    <input type="time" id="deadline-time" name="deadline_time" required>
 
                     <button type="submit">Add Task</button>
                 </div>
@@ -138,51 +136,48 @@
             <div class="task-grid" id="task-{{ task.id }}">
                 <div class="task-content">
                     <input type="checkbox" hx-post="{% url 'toggle_task_done' task.id %}" hx-trigger="change"
-                        hx-target="#task-{{ task.id }}" hx-swap="outerHTML" 
-                        {% if task.is_done %} checked {% endif %}
+                        hx-target="#task-{{ task.id }}" hx-swap="outerHTML" {% if task.is_done %} checked {% endif %}
                         hx-headers='{"X-CSRFToken": getCSRFToken()}'>
-                    <!-- Displayed Task Title -->
-                    <div class="task-title" id="task-title-{{ task.id }}" 
-                    {% if task.is_done %} style="text-decoration: line-through;"
-                        {% endif %}>
+                    <div class="task-title" id="task-title-{{ task.id }}" {% if task.is_done %}
+                        style="text-decoration: line-through;" {% endif %}>
                         {{ task.title }}
                     </div>
-                
-                    <!-- Hidden Input Field for Editing -->
-                    <input type="text" class="edit-task-title" id="edit-task-input-{{ task.id }}" name="title" value="{{ task.title }}"
-                        style="display: none;" hx-post="{% url 'edit_task' task.id %}"
-                        hx-trigger="change, blur, keyup[key=='Enter'] from:#edit-task-input-{{ task.id }}" hx-target="#task-{{ task.id }}"
-                        hx-swap="outerHTML">
-
                 </div>
-
-                <div></div>
-
                 <div class="icons-right">
-                    <div class="priority-controls">
-                        <div class="icon">🔼</div>
-                        <div class="icon">🔽</div>
-                    </div>
-
                     <div class="icon">
-                        <img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20" onclick="enableTaskEdit('{{ task.id }}')">
+                        <img src="{% static 'images/pencil.png' %}" alt="Edit Icon" height="20"
+                            onclick="enableTaskEdit('{{ task.id }}')">
                     </div>
-
-
                     <div class="icon">
                         <img src="{% static 'images/delete.png' %}" alt="Delete Icon" height="20"
                             hx-post="{% url 'delete_task' task.id %}" hx-trigger="click" hx-target="#task-{{ task.id }}"
-                            hx-swap="delete" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-
+                            hx-swap="delete" hx-headers='{"X-CSRFToken": ' {{ csrf_token }}'}'>
                     </div>
                 </div>
             </div>
             {% endfor %}
+            
+            <!-- Pagination Controls -->
+            <div class="pagination">
+                {% if tasks.has_previous %}
+                <a hx-get="?date={{ selected_date }}&page={{ tasks.previous_page_number }}" hx-target="#task-list"
+                    hx-swap="outerHTML">Previous</a>
+                {% endif %}
+
+                <span>Page {{ tasks.number }} of {{ tasks.paginator.num_pages }}</span>
+
+                {% if tasks.has_next %}
+                <a hx-get="?date={{ selected_date }}&page={{ tasks.next_page_number }}" hx-target="#task-list"
+                    hx-swap="outerHTML">Next</a>
+                {% endif %}
+            </div>
+            
+            {% else %}
+            <p>No tasks available.</p>
             {% endif %}
-        </div>
+</div>
     </div>
     {% endif %}
-
 
 </body>
 </html>

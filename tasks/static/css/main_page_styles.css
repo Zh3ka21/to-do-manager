@@ -305,3 +305,25 @@ input[type="checkbox"] {
   border: 2px solid blue; /* Ensure only today's date gets a border */
   border-radius: 5px;
 }
+
+/* ----------Pagination controls------------ */
+.pagination {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.pagination a {
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  margin: 0 5px;
+  text-decoration: none;
+  color: #333;
+}
+
+.pagination a:hover {
+  background-color: #f0f0f0;
+}
+
+.pagination span {
+  font-weight: bold;
+}
