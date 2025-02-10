@@ -22,7 +22,11 @@ SECRET_KEY = os.getenv('SECRET_KEY', '')
 
 DEBUG = os.getenv('DEBUG', 'False')
 
-ALLOWED_HOSTS: list[str] = []
+ALLOWED_HOSTS: list[str] = [
+    '0.0.0.0',    # Allow requests from 0.0.0.0
+    'localhost',  # Allow requests from localhost
+    '127.0.0.1',  # Allow requests from 127.0.0.1
+]
 
 
 INSTALLED_APPS = [
@@ -76,13 +80,14 @@ DATABASES = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
     },
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": "todomanager",
-        "USER": os.getenv("USER"),
-        "PASSWORD": os.getenv("PASSWORD"),
-        "HOST": "localhost",
-        "PORT": os.getenv("PORT"),
+
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('MYSQL_DATABASE', 'django_db'),
+        'USER': os.environ.get('MYSQL_USER', 'django_user'),
+        'PASSWORD': os.environ.get('MYSQL_PASSWORD', 'django_password'),
+        'HOST': os.environ.get('MYSQL_HOST', 'db'),
+        'PORT': os.environ.get('MYSQL_PORT', '3306'),
     },
 }
 

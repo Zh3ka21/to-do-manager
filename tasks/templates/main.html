@@ -166,8 +166,8 @@
                 </div>
                 <div class="icons-right">
                     <div class="priority-controls">
-                        <div class="icon">🔼</div>
-                        <div class="icon">🔽</div>
+                        <div class="icon" onclick="main.taskManager.changePriority('{{ task.id }}', 'up')">🔼</div>
+                        <div class="icon" onclick="main.taskManager.changePriority('{{ task.id }}', 'down')">🔽</div>
                     </div>
 
                     <div class="icon">
@@ -190,4 +190,8 @@
     {% endif %}
 
 </body>
+<script>
+    // This will add CSRF token to all HTMX requests automatically
+    htmx.config.csrfCookieName = "csrftoken";
+</script>
 </html>

@@ -1,0 +1,50 @@
+version: "3.3"
+
+services:
+  db:
+    image: mysql:8
+    env_file:
+      - ".env"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD} # Set the root password
+      MYSQL_DATABASE: ${MYSQL_DATABASE} # Create a database
+      MYSQL_USER: ${MYSQL_USER} # Create a regular user
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD} # Password for the regular user
+    ports:
+      - "3306:3306"
+    volumes:
+      - my-db:/var/lib/mysql
+    restart: always
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$$MYSQL_ROOT_PASSWORD",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build: .
+    command: ["./start_server.sh"]
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+
+volumes:
+  my-db:

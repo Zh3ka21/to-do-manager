@@ -3,6 +3,11 @@ export class TaskManager {
     this.initTaskForm();
   }
 
+  refreshTaskList() {
+    const selectedDate = document.getElementById("selected-date").value;
+    this.fetchTasksForDate(selectedDate);
+  }
+
   initTaskForm() {
     const taskForm = document.getElementById("task-form");
     if (taskForm) {
@@ -128,9 +133,15 @@ export class TaskManager {
         // Handle tasks
         if (data.context && data.context.tasks.length > 0) {
           data.context.tasks.sort((a, b) => a.priority - b.priority);
+          console.log(data.context.tasks);
 
-          // Render tasks
           data.context.tasks.forEach((task) => {
+            if (!task.id) {
+              console.error("Missing task ID:", task);
+              return;
+            }
+            console.log("Current taks id: ", task.id);
+
             const taskHtml = `
             <div class="task-grid" id="task-${task.id}">
               <div class="task-content">
@@ -140,10 +151,10 @@ export class TaskManager {
                     hx-post="/task/${task.id}/toggle"
                     hx-trigger="change"
                     hx-swap="none"
-                    hx-headers='{"X-CSRFToken": main.getCSRFToken()}'
-                    onchange="main.taskManager.toggleTaskStyle(${
-                      task.id
-                    }, this.checked)">
+                  <hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                  onchange="main.taskManager.toggleTaskStyle(${
+                    task.id
+                  }, this.checked)">
                 <div class="task-title" id="task-title-${task.id}" 
                     style="${
                       task.is_done ? "text-decoration: line-through;" : ""
@@ -165,14 +176,13 @@ export class TaskManager {
               <div></div>
               <div class="icons-right">
                 <div class="priority-controls">
-                  <div class="icon" onclick="main.taskManager.changePriority(${
-                    task.id
-                  }, 1)">
-                  🔼
+                  <div class="icon"
+                   onclick="main.taskManager.changePriority(${
+                     task.id
+                   }, 'up')"> 🔼
                   </div>
-                  <div class="icon" onclick="main.taskManager.changePriority(${
-                    task.id
-                  }, -1)">
+                  <div class="icon" 
+                  onclick="main.taskManager.changePriority(${task.id}, 'down')">
                   🔽
                   </div>
                 </div>
@@ -185,7 +195,7 @@ export class TaskManager {
                       hx-trigger="click"
                       hx-target="#task-${task.id}"
                       hx-swap="delete"
-                      hx-headers='{"X-CSRFToken": main.getCSRFToken()}'
+                      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                       onclick="main.taskManager.deleteTask('${task.id}')">
                 </div>
               </div>
@@ -227,20 +237,22 @@ export class TaskManager {
       });
   }
 
-  changePriority(taskId, delta) {
-    fetch(`/move_task_${delta > 0 ? "up" : "down"}/${taskId}/`, {
+  changePriority(taskId, direction) {
+    fetch(`/move_task/${taskId}/${direction}/`, {
       method: "POST",
       headers: {
         "X-CSRFToken": main.getCSRFToken(),
+        "Content-Type": "application/json",
       },
     })
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          const dateString = document.getElementById("date-picker").value;
-          this.fetchTasksForDate(dateString);
+          this.refreshTaskList(); // Reloads tasks after moving
+        } else {
+          console.error("Error moving task:", data.error);
         }
       })
-      .catch((error) => console.error("Error changing task priority:", error));
+      .catch((error) => console.error("Request failed:", error));
   }
 }

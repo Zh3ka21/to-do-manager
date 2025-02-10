@@ -7,6 +7,7 @@ from django.forms import model_to_dict
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import Project, Task
 
@@ -46,6 +47,7 @@ def toggle_task_done(request, task_id) -> HttpResponse:
     """Toggle the completion status of a task."""
     task = get_object_or_404(Task, id=task_id, user=request.user)
     task.toggle_done()
+    print('Is task done:', task.is_done)  # or log the task state to check if it's toggling
 
     # Return the updated task HTML after the toggle
     return render(request, 'partials/task_partial.html', {'task': task})
@@ -126,29 +128,14 @@ def edit_task(request, task_id: int) -> HttpResponse:
 
     return HttpResponse(status=405)
 
+@login_required
+def move_task(request: HttpRequest, taskId: int, direction: str):
+    task = get_object_or_404(Task, id=taskId)
 
-def move_task(request: HttpRequest, task_id: int, direction: str):
-    task = get_object_or_404(Task, id=task_id)
+    if task.move_priority(direction):
+        return JsonResponse({"success": True})
 
-    # Get all tasks sorted by a field  'priority'
-    tasks = Task.objects.all().order_by('priority')
-
-    task_index = list(tasks).index(task)
-
-    # Move the task up or down
-    if direction == 'up' and task_index > 0:
-        task_to_swap = tasks[task_index - 1]
-        task_to_swap.priority, task.priority = task.priority, task_to_swap.priority
-        task_to_swap.save()
-        task.save()
-    elif direction == 'down' and task_index < len(tasks) - 1:
-        task_to_swap = tasks[task_index + 1]
-        task_to_swap.priority, task.priority = task.priority, task_to_swap.priority
-        task_to_swap.save()
-        task.save()
-
-    return redirect(request.META.get('HTTP_REFERER', '/'))
-
+    return JsonResponse({"success": False, "error": "Cannot move task"})
 
 @login_required
 def project_dates(request):
@@ -212,7 +199,6 @@ def create_project(request):
         )
     return JsonResponse({"error": "Invalid request"}, status=400)
 
-
 @login_required
 def get_tasks_for_date(request):
     date = request.GET.get("date")
@@ -224,12 +210,14 @@ def get_tasks_for_date(request):
 
     # Fetch tasks that are either associated with the project or standalone (no project)
     if project:
-        tasks_with_project = Task.objects.filter(project=project).values("id", "title", "is_done")
+        tasks_with_project = Task.objects.filter(project=project).values(
+            "id", "title", "is_done", "priority",
+        )
 
         tasks_without_project = Task.objects.filter(
             project__isnull=True,
             user=request.user, deadline=date,
-        ).values("id", "title", "is_done")
+        ).values("id", "title", "is_done", "priority")
 
         tasks = list(tasks_with_project) + list(tasks_without_project)
     else:
@@ -237,7 +225,7 @@ def get_tasks_for_date(request):
             project__isnull=True,
             user=request.user,
             deadline__date=date,
-        ).values("id", "title", "is_done")
+        ).values("id", "title", "is_done", "priority")
 
     context = {
         "tasks": list(tasks),
