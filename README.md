@@ -124,20 +124,52 @@ docker-compose -f docker-compose-test.yaml run --rm test pytest
   - `static/`: CSS, JavaScript, and images
   - `tests/`: Test cases for models and views
 
-## Notes
+## How to Use the App
 
-### Authentication and Page Reloading
+### Getting Started
 
-After login, signup, or signout, refresh the page manually or use browser refresh to ensure proper functionality. The current implementation may have routing quirks that can be resolved by a page reload.
+1. **Authentication**
 
-Recommended actions:
+   - Sign up or log in to access the application
+   - _Note_: After login/signup, refresh the page to ensure proper functionality
 
-- Always refresh the page after authentication actions
-- Use browser's refresh button or F5 key
-- Ensure all features load correctly after page reload
+2. **Creating Projects**
 
-Potential improvements for future versions:
+   - Click on the calendar icon to create a new project
+   - Specify the project date
+   - Tasks that were created on this date will be automatically grouped into the project
+
+3. **Managing Tasks**
+
+   - Click the "Add task" button to add a new task
+   - Date selector is available near the add task button
+   - Tasks can be:
+     - Edited
+     - Deleted
+     - Reprioritized
+     - Grouped into a project (if there is no project for a date, but there are task they can be grouped into a project)
+
+4. **Task Organization**
+   - Tasks are automatically grouped by their creation date
+   - Projects help categorize and manage related tasks
+   - Use date selection to create context-specific task lists
+
+### Notes
+
+**Authentication and Page Reloading**
+
+- After login, signup, or signout, refresh the page manually
+- Use browser refresh (F5) to ensure all features load correctly
+- This helps resolve potential routing or loading issues
+
+**Potential improvements for future versions**:
 
 - Implement more robust HTMX-based page transitions
 - Enhance client-side routing mechanisms
 - Add explicit redirect handling in authentication views
+
+## Tips
+
+- Always check the date when creating tasks
+- Utilize project grouping for better task management
+- Regularly update and reprioritize your tasks
