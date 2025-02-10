@@ -47,7 +47,6 @@ def toggle_task_done(request, task_id) -> HttpResponse:
     """Toggle the completion status of a task."""
     task = get_object_or_404(Task, id=task_id, user=request.user)
     task.toggle_done()
-    print('Is task done:', task.is_done)  # or log the task state to check if it's toggling
 
     # Return the updated task HTML after the toggle
     return render(request, 'partials/task_partial.html', {'task': task})

@@ -19,7 +19,7 @@ urlpatterns = [
     path("", base_view_handler, name="base_view_handler"),
 
     path("add_task/", add_task, name="add_task"),
-    path("delete-task/<int:task_id>/", delete_task, name="delete_task"),
+    path("delete_task/<int:task_id>/", delete_task, name="delete_task"),
     path("task/edit/<int:task_id>/", edit_task, name="edit_task"),
     path("move_task/<int:taskId>/<str:direction>/", move_task, name="move_task"),
     path("task/<int:task_id>/toggle/", toggle_task_done, name="toggle_task_done"),

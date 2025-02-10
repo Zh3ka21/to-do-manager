@@ -1,6 +1,27 @@
+console.log("Htmx is okay:", typeof htmx !== "undefined");
+
 export class TaskManager {
   constructor() {
     this.initTaskForm();
+
+    document.addEventListener("htmx:beforeRequest", function (evt) {
+      console.log("HTMX Request about to be sent:", evt.detail);
+    });
+
+    document.addEventListener("htmx:afterRequest", function (evt) {
+      console.log("HTMX Request completed:", evt.detail);
+    });
+
+    document.addEventListener("htmx:configRequest", function (evt) {
+      console.log("HTMX Request configured:", evt.detail);
+    });
+  }
+
+  getCSRFToken() {
+    const csrfCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("csrftoken="));
+    return csrfCookie ? csrfCookie.split("=")[1] : null;
   }
 
   refreshTaskList() {
@@ -146,28 +167,32 @@ export class TaskManager {
             <div class="task-grid" id="task-${task.id}">
               <div class="task-content">
                 <input type="checkbox" 
-                    ${task.is_done ? "checked" : ""}
-                    class="task-checkbox"
-                    hx-post="/task/${task.id}/toggle"
-                    hx-trigger="change"
-                    hx-swap="none"
-                  <hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                  ${task.is_done ? "checked" : ""}
+                  class="task-checkbox"
+                  hx-post="/task/${task.id}/toggle/"
+                  hx-trigger="change"
+                  hx-swap="outerHTML"
+                  hx-target="#task-${task.id}"
+                  hx-headers='{"X-CSRFToken": "${this.getCSRFToken()}"}'
                   onchange="main.taskManager.toggleTaskStyle(${
                     task.id
                   }, this.checked)">
+                  
                 <div class="task-title" id="task-title-${task.id}" 
                     style="${
                       task.is_done ? "text-decoration: line-through;" : ""
                     }">
                   ${task.title}
                 </div>
+
+
                 <input type="text" 
                     class="edit-task-title" 
                     id="edit-task-input-${task.id}" 
                     name="title" 
                     value="${task.title}"
                     style="display: none;" 
-                    hx-post="/task/edit/${task.id}"
+                    hx-post="/task/edit/${task.id}/"
                     hx-trigger="change, blur, keyup[key=='Enter']"
                     hx-target="#task-${task.id}"
                     hx-swap="outerHTML"
@@ -202,6 +227,7 @@ export class TaskManager {
             </div>
           `;
             taskList.innerHTML += taskHtml;
+            htmx.process(taskList); // Add this line to process new content
           });
         }
       })
@@ -209,6 +235,7 @@ export class TaskManager {
   }
 
   toggleTaskStyle(taskId, isChecked) {
+    console.log("Toggle called:", taskId, isChecked);
     const taskTitle = document.getElementById(`task-title-${taskId}`);
     if (taskTitle) {
       taskTitle.style.textDecoration = isChecked ? "line-through" : "none";
@@ -218,7 +245,7 @@ export class TaskManager {
   deleteTask(taskId) {
     const csrftoken = main.getCSRFToken();
 
-    fetch(`delete-task/${taskId}/`, {
+    fetch(`delete_task/${taskId}/`, {
       method: "POST",
       headers: {
         "X-CSRFToken": csrftoken,
