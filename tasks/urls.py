@@ -1,3 +1,4 @@
+"""Urls router."""
 from django.urls import path
 
 from tasks.views import base_view_handler

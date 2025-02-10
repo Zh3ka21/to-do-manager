@@ -42,7 +42,7 @@ class Project(models.Model):
         return [d.strftime('%Y-%m-%d') for d in projects]
 
     @classmethod
-    def create_new_project(cls, user: User, name: str, project_date: str) -> tuple[bool, Optional['Project'], Optional[str]]:
+    def create_new_project(cls, user: User, name: str, project_date: str) -> tuple[bool, Optional['Project'], str | None]:
         """Create a new project if one doesn't exist for the date."""
         if not name.strip():
             return False, None, "Project title cannot be empty"
@@ -59,7 +59,7 @@ class Project(models.Model):
         )
         return True, project, None
 
-    def update_project(self, new_name: str) -> tuple[bool, Optional[str]]:
+    def update_project(self, new_name: str) -> tuple[bool, str | None]:
         """Update the project's name."""
         if not new_name.strip():
             return False, "Project name cannot be empty"
@@ -87,7 +87,7 @@ class Task(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     @classmethod
-    def create_task(cls, user: User, project: Project, title: str, deadline_time: Optional[str] = None) -> tuple[bool, Optional['Task'], Optional[str]]:
+    def create_task(cls, user: User, project: Project, title: str, deadline_time: str | None = None) -> tuple[bool, Optional['Task'], str | None]:
         """Create a new task."""
         if not title.strip():
             return False, None, "Task title is required"
@@ -119,7 +119,7 @@ class Task(models.Model):
         self.is_done = not self.is_done
         self.save()
 
-    def update_title(self, new_title: str) -> tuple[bool, Optional[str]]:
+    def update_title(self, new_title: str) -> tuple[bool, str | None]:
         """Update the task's title."""
         if not new_title.strip():
             return False, "Title cannot be empty"

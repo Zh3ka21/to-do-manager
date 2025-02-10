@@ -1,3 +1,5 @@
+"""Views of tasks and projects."""
+
 import calendar
 from datetime import date, datetime
 
@@ -15,7 +17,6 @@ from tasks.models import Project, Task
 @log_view_action("Base View")
 def base_view_handler(request: HttpRequest) -> HttpResponse:
     """Handle default URL routing and display projects/tasks for a selected date."""
-
     selected_date = request.GET.get("date", date.today().strftime('%Y-%m-%d'))
     project = None
     tasks = Task.objects.none()  # Default to no tasks
@@ -31,7 +32,7 @@ def base_view_handler(request: HttpRequest) -> HttpResponse:
             # If no project exists, check if there are tasks with no project (project__isnull=True)
             tasks = Task.objects.filter(
                 Q(project__isnull=True, user=request.user),
-                created_at__date=selected_date
+                created_at__date=selected_date,
             ).order_by("priority")
 
     # If no project or tasks were found, `tasks` will be an empty queryset.
@@ -84,7 +85,7 @@ def add_task(request):
 
         # Determine priority
         lowest_priority_task = Task.objects.filter(
-            Q(project=project) | Q(project__isnull=True, user=request.user, created_at__date=selected_date)
+            Q(project=project) | Q(project__isnull=True, user=request.user, created_at__date=selected_date),
         ).order_by('-priority').first()
         lowest_priority = lowest_priority_task.priority if lowest_priority_task else 0
 
