@@ -16,6 +16,7 @@ django-allauth = "^65.3.1"
 django-htmx = "^1.21.0"
 types-pymysql = "^1.1.0.20241103"
 gunicorn = "^23.0.0"
+pre-commit = "^4.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
@@ -27,15 +28,17 @@ isort = "^6.0.0"
 pylint = "^3.3.4"
 pylint-django = "^2.6.1"
 django-stubs = "^5.1.2"
+pytest-mock = "^3.14.0"
+mysql-connector-python = "^9.2.0"
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py312"
 src = ["."]
 
 [tool.ruff.lint]
 select = ["F", "I", "W", "E", "N", "D", "S", "ANN", "ARG", "B", "C4", "E", "ERA", "ISC", "PD", "PIE", "PL", "PT", "RET", "SIM", "TCH", "UP", "W", "BLE", "FBT", "B", "A", "COM", "DTZ", "ICN", "G", "INP", "T20", "RSE", "SLF", "PTH", "TD", "PGH", "PERF", "FURB", "RUF"]
-ignore = []
+ignore = ["D203", "D211", "D212", "D213"] 
 
 [tool.mypy.django-stubs]
 django_settings_module = "config.settings"
@@ -52,10 +55,9 @@ django_settings_module = "config.settings"
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q --cache-clear"
-DJANGO_SETTINGS_MODULE = "config.settings.test"
-testpaths = [
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
 
-]
 
 [tool.black]
 line-length = 120

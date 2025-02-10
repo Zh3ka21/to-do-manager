@@ -1,0 +1,52 @@
+version: "3.3"
+
+services:
+  db:
+    image: mysql:8
+    env_file:
+      - ".env"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - my-db:/var/lib/mysql
+    restart: always
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p$$MYSQL_ROOT_PASSWORD",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  test:
+    # Build using Dockerfile.test
+    build:
+      context: .
+      dockerfile: Dockerfile.test # Specify Dockerfile.test here
+    command: ["poetry", "run", "pytest", "-v", "--maxfail=1"]
+    entrypoint: [] # So that we don't start the server, just run tests
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+
+volumes:
+  my-db:

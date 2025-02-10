@@ -117,7 +117,7 @@ class Migration(migrations.Migration):
                 (
                     "project",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, related_name="tasks", to="tasks.project"
+                        on_delete=django.db.models.deletion.CASCADE, related_name="tasks", to="tasks.project",
                     ),
                 ),
                 ("user", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),

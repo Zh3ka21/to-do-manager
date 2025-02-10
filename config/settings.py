@@ -24,7 +24,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', '')
 DEBUG = os.getenv('DEBUG', 'False')
 
 ALLOWED_HOSTS: list[str] = [
-    '0.0.0.0',    # Allow requests from 0.0.0.0
+    '0.0.0.0',    # Allow requests from 0.0.0.0  # noqa: S104
     'localhost',  # Allow requests from localhost
     '127.0.0.1',  # Allow requests from 127.0.0.1
 ]
@@ -47,7 +47,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(settings.BASE_DIR, 'logs', 'django.log'),
+            'filename': Path(settings.BASE_DIR) / 'logs' / 'django.log',
             'formatter': 'verbose',
         },
         'console': {

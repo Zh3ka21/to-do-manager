@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar
 
 from django.http import HttpRequest, HttpResponse
 
@@ -56,7 +57,7 @@ def log_view_action(action_name: str) -> Callable[[Callable[P, R]], Callable[P, 
                 logger.exception(
                     f"Error in {action_name} | "  # noqa: G004
                     f"User: {user_id} | "
-                    f"Error: {str(e)}",
+                    f"Error: {e!s}",
                 )
                 raise
 
