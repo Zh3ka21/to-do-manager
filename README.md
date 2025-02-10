@@ -124,6 +124,16 @@ docker-compose -f docker-compose-test.yaml run --rm test pytest
   - `static/`: CSS, JavaScript, and images
   - `tests/`: Test cases for models and views
 
+## UI
+
+### No selected project for a date without tasks
+
+![alt text](tasks/static/images/UI-Selected-Project.png)
+
+### Project selected with tasks vizualization
+
+![alt text](tasks/static/images/UI-selected-project-tasks.png)
+
 ## How to Use the App
 
 ### Getting Started
