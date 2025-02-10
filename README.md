@@ -123,3 +123,21 @@ docker-compose -f docker-compose-test.yaml run --rm test pytest
   - `templates/`: HTML templates
   - `static/`: CSS, JavaScript, and images
   - `tests/`: Test cases for models and views
+
+## Notes
+
+### Authentication and Page Reloading
+
+After login, signup, or signout, refresh the page manually or use browser refresh to ensure proper functionality. The current implementation may have routing quirks that can be resolved by a page reload.
+
+Recommended actions:
+
+- Always refresh the page after authentication actions
+- Use browser's refresh button or F5 key
+- Ensure all features load correctly after page reload
+
+Potential improvements for future versions:
+
+- Implement more robust HTMX-based page transitions
+- Enhance client-side routing mechanisms
+- Add explicit redirect handling in authentication views
