@@ -1,6 +1,32 @@
+console.log("Htmx is okay:", typeof htmx !== "undefined");
+
 export class TaskManager {
   constructor() {
     this.initTaskForm();
+
+    document.addEventListener("htmx:beforeRequest", function (evt) {
+      console.log("HTMX Request about to be sent:", evt.detail);
+    });
+
+    document.addEventListener("htmx:afterRequest", function (evt) {
+      console.log("HTMX Request completed:", evt.detail);
+    });
+
+    document.addEventListener("htmx:configRequest", function (evt) {
+      console.log("HTMX Request configured:", evt.detail);
+    });
+  }
+
+  getCSRFToken() {
+    const csrfCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("csrftoken="));
+    return csrfCookie ? csrfCookie.split("=")[1] : null;
+  }
+
+  refreshTaskList() {
+    const selectedDate = document.getElementById("selected-date").value;
+    this.fetchTasksForDate(selectedDate);
   }
 
   initTaskForm() {
@@ -128,35 +154,45 @@ export class TaskManager {
         // Handle tasks
         if (data.context && data.context.tasks.length > 0) {
           data.context.tasks.sort((a, b) => a.priority - b.priority);
+          console.log(data.context.tasks);
 
-          // Render tasks
           data.context.tasks.forEach((task) => {
+            if (!task.id) {
+              console.error("Missing task ID:", task);
+              return;
+            }
+            console.log("Current taks id: ", task.id);
+
             const taskHtml = `
             <div class="task-grid" id="task-${task.id}">
               <div class="task-content">
                 <input type="checkbox" 
-                    ${task.is_done ? "checked" : ""}
-                    class="task-checkbox"
-                    hx-post="/task/${task.id}/toggle"
-                    hx-trigger="change"
-                    hx-swap="none"
-                    hx-headers='{"X-CSRFToken": main.getCSRFToken()}'
-                    onchange="main.taskManager.toggleTaskStyle(${
-                      task.id
-                    }, this.checked)">
+                  ${task.is_done ? "checked" : ""}
+                  class="task-checkbox"
+                  hx-post="/task/${task.id}/toggle/"
+                  hx-trigger="change"
+                  hx-swap="outerHTML"
+                  hx-target="#task-${task.id}"
+                  hx-headers='{"X-CSRFToken": "${this.getCSRFToken()}"}'
+                  onchange="main.taskManager.toggleTaskStyle(${
+                    task.id
+                  }, this.checked)">
+                  
                 <div class="task-title" id="task-title-${task.id}" 
                     style="${
                       task.is_done ? "text-decoration: line-through;" : ""
                     }">
                   ${task.title}
                 </div>
+
+
                 <input type="text" 
                     class="edit-task-title" 
                     id="edit-task-input-${task.id}" 
                     name="title" 
                     value="${task.title}"
                     style="display: none;" 
-                    hx-post="/task/edit/${task.id}"
+                    hx-post="/task/edit/${task.id}/"
                     hx-trigger="change, blur, keyup[key=='Enter']"
                     hx-target="#task-${task.id}"
                     hx-swap="outerHTML"
@@ -165,14 +201,13 @@ export class TaskManager {
               <div></div>
               <div class="icons-right">
                 <div class="priority-controls">
-                  <div class="icon" onclick="main.taskManager.changePriority(${
-                    task.id
-                  }, 1)">
-                  🔼
+                  <div class="icon"
+                   onclick="main.taskManager.changePriority(${
+                     task.id
+                   }, 'up')"> 🔼
                   </div>
-                  <div class="icon" onclick="main.taskManager.changePriority(${
-                    task.id
-                  }, -1)">
+                  <div class="icon" 
+                  onclick="main.taskManager.changePriority(${task.id}, 'down')">
                   🔽
                   </div>
                 </div>
@@ -185,13 +220,14 @@ export class TaskManager {
                       hx-trigger="click"
                       hx-target="#task-${task.id}"
                       hx-swap="delete"
-                      hx-headers='{"X-CSRFToken": main.getCSRFToken()}'
+                      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
                       onclick="main.taskManager.deleteTask('${task.id}')">
                 </div>
               </div>
             </div>
           `;
             taskList.innerHTML += taskHtml;
+            htmx.process(taskList); // Add this line to process new content
           });
         }
       })
@@ -199,6 +235,7 @@ export class TaskManager {
   }
 
   toggleTaskStyle(taskId, isChecked) {
+    console.log("Toggle called:", taskId, isChecked);
     const taskTitle = document.getElementById(`task-title-${taskId}`);
     if (taskTitle) {
       taskTitle.style.textDecoration = isChecked ? "line-through" : "none";
@@ -208,7 +245,7 @@ export class TaskManager {
   deleteTask(taskId) {
     const csrftoken = main.getCSRFToken();
 
-    fetch(`delete-task/${taskId}/`, {
+    fetch(`delete_task/${taskId}/`, {
       method: "POST",
       headers: {
         "X-CSRFToken": csrftoken,
@@ -227,20 +264,22 @@ export class TaskManager {
       });
   }
 
-  changePriority(taskId, delta) {
-    fetch(`/move_task_${delta > 0 ? "up" : "down"}/${taskId}/`, {
+  changePriority(taskId, direction) {
+    fetch(`/move_task/${taskId}/${direction}/`, {
       method: "POST",
       headers: {
         "X-CSRFToken": main.getCSRFToken(),
+        "Content-Type": "application/json",
       },
     })
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          const dateString = document.getElementById("date-picker").value;
-          this.fetchTasksForDate(dateString);
+          this.refreshTaskList(); // Reloads tasks after moving
+        } else {
+          console.error("Error moving task:", data.error);
         }
       })
-      .catch((error) => console.error("Error changing task priority:", error));
+      .catch((error) => console.error("Request failed:", error));
   }
 }

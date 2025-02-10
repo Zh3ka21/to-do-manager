@@ -1,16 +1,19 @@
 import calendar
+import logging
 from datetime import date, datetime
 
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.forms import model_to_dict
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, render
 from django.utils.timezone import now
 
-from .models import Project, Task
+from tasks.logging_config import log_view_action
+from tasks.models import Project, Task
 
 
+@log_view_action("Base View")
 def base_view_handler(request: HttpRequest) -> HttpResponse:
     """Handle default URL routing and display projects/tasks for a selected date."""
 
@@ -41,16 +44,17 @@ def base_view_handler(request: HttpRequest) -> HttpResponse:
 
     return render(request, "main.html", context)
 
+@log_view_action("Toggle Task")
 @login_required
 def toggle_task_done(request, task_id) -> HttpResponse:
     """Toggle the completion status of a task."""
     task = get_object_or_404(Task, id=task_id, user=request.user)
-    task.is_done = not task.is_done  # Toggle status
-    task.save()
+    task.toggle_done()
 
     # Return the updated task HTML after the toggle
     return render(request, 'partials/task_partial.html', {'task': task})
 
+@log_view_action("Add Task")
 @login_required
 def add_task(request):
     if request.method == "POST":
@@ -97,6 +101,7 @@ def add_task(request):
         return render(request, 'partials/task_partial.html', {'task': task})
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
+@log_view_action("Delete Task")
 @login_required
 def delete_task(request, task_id: int) -> HttpResponse:
     """Delete task using HTMX."""
@@ -106,6 +111,7 @@ def delete_task(request, task_id: int) -> HttpResponse:
         return HttpResponse("")  # Return empty response for HTMX delete
     return HttpResponse(status=405)  # Method not allowed
 
+@log_view_action("Edit Task")
 @login_required
 def edit_task(request, task_id: int) -> HttpResponse:
     """Edit task using HTMX."""
@@ -127,30 +133,17 @@ def edit_task(request, task_id: int) -> HttpResponse:
 
     return HttpResponse(status=405)
 
+@log_view_action("Move Task")
+@login_required
+def move_task(request: HttpRequest, taskId: int, direction: str):
+    task = get_object_or_404(Task, id=taskId)
 
-def move_task(request: HttpRequest, task_id: int, direction: str):
-    task = get_object_or_404(Task, id=task_id)
+    if task.move_priority(direction):
+        return JsonResponse({"success": True})
 
-    # Get all tasks sorted by a field  'priority'
-    tasks = Task.objects.all().order_by('priority')
+    return JsonResponse({"success": False, "error": "Cannot move task"})
 
-    task_index = list(tasks).index(task)
-
-    # Move the task up or down
-    if direction == 'up' and task_index > 0:
-        task_to_swap = tasks[task_index - 1]
-        task_to_swap.priority, task.priority = task.priority, task_to_swap.priority
-        task_to_swap.save()
-        task.save()
-    elif direction == 'down' and task_index < len(tasks) - 1:
-        task_to_swap = tasks[task_index + 1]
-        task_to_swap.priority, task.priority = task.priority, task_to_swap.priority
-        task_to_swap.save()
-        task.save()
-
-    return redirect(request.META.get('HTTP_REFERER', '/'))
-
-
+@log_view_action("Project Dates")
 @login_required
 def project_dates(request):
     try:
@@ -177,6 +170,7 @@ def project_dates(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+@log_view_action("Create Project")
 @login_required
 def create_project(request):
     if request.method == "POST":
@@ -213,7 +207,7 @@ def create_project(request):
         )
     return JsonResponse({"error": "Invalid request"}, status=400)
 
-
+@log_view_action("Get task for date")
 @login_required
 def get_tasks_for_date(request):
     date = request.GET.get("date")
@@ -225,12 +219,14 @@ def get_tasks_for_date(request):
 
     # Fetch tasks that are either associated with the project or standalone (no project)
     if project:
-        tasks_with_project = Task.objects.filter(project=project).values("id", "title", "is_done")
+        tasks_with_project = Task.objects.filter(project=project).values(
+            "id", "title", "is_done", "priority",
+        )
 
         tasks_without_project = Task.objects.filter(
             project__isnull=True,
             user=request.user, deadline=date,
-        ).values("id", "title", "is_done")
+        ).values("id", "title", "is_done", "priority")
 
         tasks = list(tasks_with_project) + list(tasks_without_project)
     else:
@@ -238,7 +234,7 @@ def get_tasks_for_date(request):
             project__isnull=True,
             user=request.user,
             deadline__date=date,
-        ).values("id", "title", "is_done")
+        ).values("id", "title", "is_done", "priority")
 
     context = {
         "tasks": list(tasks),
@@ -246,6 +242,8 @@ def get_tasks_for_date(request):
     }
     return JsonResponse({"context": context})
 
+@log_view_action("Project Name Update")
+@login_required
 def update_project_name(request, project_id):
     if request.method == 'POST':
         project = Project.objects.get(id=project_id, deleted=False)
@@ -258,6 +256,8 @@ def update_project_name(request, project_id):
         return JsonResponse({'error': 'Invalid name'})
     return JsonResponse({'error': 'Invalid request method'})
 
+@log_view_action("Project Soft Delete")
+@login_required
 def soft_delete_project(request, project_id):
     if request.method == 'POST':
         project = Project.objects.get(id=project_id, deleted=False)
