@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 
 import pymysql
+from django.conf import settings
 from dotenv import load_dotenv
 
 pymysql.install_as_MySQLdb()
@@ -28,6 +29,42 @@ ALLOWED_HOSTS: list[str] = [
     '127.0.0.1',  # Allow requests from 127.0.0.1
 ]
 
+# Logger config
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(settings.BASE_DIR, 'logs', 'django.log'),
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+            'stream': 'ext://sys.stdout',  # Logs to stdout
+        },
+    },
+    'loggers': {
+        'tasks': {
+            'handlers': ['file', 'console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
 
 INSTALLED_APPS = [
     "django.contrib.admin",
