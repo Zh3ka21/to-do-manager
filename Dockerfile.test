@@ -1,0 +1,37 @@
+# Dockerfile.test
+
+# Use the base Python 3.12.9-alpine image
+FROM python:3.12.9-alpine
+
+# Install system dependencies required for Django and MySQL (if needed)
+RUN apk update && apk add --no-cache \
+    build-base \
+    libffi-dev \
+    zlib-dev \
+    libmagic \
+    mysql-client \
+    && rm -rf /var/cache/apk/*
+
+# Set the working directory inside the container
+WORKDIR /app/
+
+# Install Poetry (Python dependency manager)
+RUN pip install poetry
+
+# Configure poetry to not create a virtual environment (use global environment)
+RUN poetry config virtualenvs.create false
+
+# Copy only dependency files first (for caching purposes)
+COPY poetry.lock pyproject.toml ./
+
+# Install all dependencies, including dev dependencies (this includes pytest)
+RUN poetry install --no-interaction --no-ansi --no-root
+
+# Copy the rest of the application code
+COPY . .
+
+# Expose port 8000 if needed (in case tests need it)
+EXPOSE 8000
+
+# Set the default command for tests
+CMD ["poetry", "run", "pytest", "-v", "--maxfail=1"]
