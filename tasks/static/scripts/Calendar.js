@@ -20,11 +20,19 @@ export class Calendar {
   }
 
   initCalendar() {
-    document.getElementById("weekdays").innerHTML = this.DAYS.map(
-      (day) => `<div class="weekday">${day}</div>`
-    ).join("");
-    this.updateCalendar();
-    this.fetchProjects();
+    const isAuthenticated = document.body.dataset.authenticated === "true";
+
+    if (isAuthenticated) {
+      document.getElementById("weekdays").innerHTML = this.DAYS.map(
+        (day) => `<div class="weekday">${day}</div>`
+      ).join("");
+      this.updateCalendar();
+      this.fetchProjects();
+    } else {
+      console.warn(
+        "User is not authenticated. Skipping calendar initialization."
+      );
+    }
   }
 
   updateCalendar() {

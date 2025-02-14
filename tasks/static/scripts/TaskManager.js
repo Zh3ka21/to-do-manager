@@ -1,5 +1,3 @@
-console.log("Htmx is okay:", typeof htmx !== "undefined");
-
 export class TaskManager {
   constructor() {
     this.initTaskForm();

@@ -1,0 +1,16 @@
+{% block content %}
+<div class="auth-container">
+    <h2>You have been logged out</h2>
+    <p>You have successfully logged out.</p>
+    <p>
+        <a href="{% url 'custom_login' %}?next={{ request.path }}">Login again</a>
+    </p>
+    <p>
+        <a href="{% url 'custom_signup' %}?next={{ request.path }}">Create an account</a>
+    </p>
+    <p>
+        <a href="{% url 'base_view_handler' %}">Go back to the main page</a>
+    </p>
+
+</div>
+{% endblock %}

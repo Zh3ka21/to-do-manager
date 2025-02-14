@@ -2,14 +2,20 @@
 
 import calendar
 from datetime import date, datetime
+from urllib.parse import urlparse
 
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.db.models import Q
 from django.forms import model_to_dict
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.timezone import now
 
+from tasks.forms import CustomLoginForm, CustomSignupForm
 from tasks.logging_config import log_view_action
 from tasks.models import Project, Task
 
@@ -17,6 +23,9 @@ from tasks.models import Project, Task
 @log_view_action("Base View")
 def base_view_handler(request: HttpRequest) -> HttpResponse:
     """Handle default URL routing and display projects/tasks for a selected date."""
+    if not request.user.is_authenticated:
+        return redirect('custom_login')
+
     selected_date = request.GET.get("date", date.today().strftime('%Y-%m-%d'))
     project = None
     tasks = Task.objects.none()  # Default to no tasks
@@ -264,3 +273,58 @@ def soft_delete_project(request, project_id):
         project.soft_delete()
         return JsonResponse({'success': True})
     return JsonResponse({'error': 'Invalid request method'})
+
+##--------------------------------------------##
+
+@log_view_action("Custom Login")
+def custom_login(request):
+    # Check if there's a `next` URL to redirect after login
+    next_url = request.GET.get('next', '/')  # Default to '/' if 'next' is not provided
+    print("!1 First! Next URL:", next_url)  # Debugging
+
+    if request.method == "POST":
+        form = CustomLoginForm(request.POST)
+        form.request = request
+        if form.is_valid():
+            username = form.cleaned_data.get("login")
+            password = form.cleaned_data.get("password")
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                print("!2 Second! Next URL:", next_url)  # Debugging
+                # Ensure we're redirecting to the correct next_url (default to home if none)
+                return redirect(next_url)
+
+    else:
+        form = CustomLoginForm()
+
+    return render(request, "login.html", {"form": form})
+
+
+@log_view_action("Custom Signup")
+def custom_signup(request):
+    # Set the next_url to a default if it's not present in the GET request
+    next_url = request.GET.get('next', '/base_view_handler/')
+
+    if request.method == "POST":
+        form = CustomSignupForm(request.POST)
+        if form.is_valid():
+            form.save(request)
+            return redirect(next_url)  # Redirect to the value of next_url
+    else:
+        form = CustomSignupForm()
+
+    return render(request, "signup.html", {"form": form})
+
+
+@log_view_action("Custom Logout")
+def custom_logout(request):
+    # Save the current path (to redirect to after logout)
+    next_url = request.GET.get('next', '/')  # Default to home if no next parameter
+    logout(request)
+    return redirect(next_url)
+
+
+def check_auth_status(request):
+    is_authenticated = request.user.is_authenticated
+    return JsonResponse({'authenticated': is_authenticated})

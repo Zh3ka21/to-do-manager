@@ -16,9 +16,19 @@ class Main {
 
   init() {
     document.addEventListener("DOMContentLoaded", () => {
-      this.calendar.initCalendar();
-      this.taskManager.initTaskForm();
-      this.projectManager.initProjectForm();
+      const isAuthenticated = document.body.dataset.authenticated === "true";
+      console.log("User authenticated status:", isAuthenticated);
+
+      if (isAuthenticated) {
+        console.log("Initializing calendar..."); // Debugging line
+        this.calendar.initCalendar();
+        this.taskManager.initTaskForm();
+        this.projectManager.initProjectForm();
+      } else {
+        console.warn(
+          "User is not authenticated. Skipping calendar initialization."
+        );
+      }
 
       // Set CSRF token dynamically for all HTMX requests
       document.addEventListener("htmx:configRequest", (event) => {

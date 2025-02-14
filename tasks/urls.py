@@ -1,11 +1,16 @@
 """Urls router."""
+from django.contrib.auth import views as auth_views
 from django.urls import path
 
 from tasks.views import base_view_handler
 
 from .views import (
     add_task,
+    check_auth_status,
     create_project,
+    custom_login,
+    custom_logout,
+    custom_signup,
     delete_task,
     edit_task,
     get_tasks_for_date,
@@ -18,6 +23,16 @@ from .views import (
 
 urlpatterns = [
     path("", base_view_handler, name="base_view_handler"),
+    path('api/auth-status/', check_auth_status, name='check_auth_status'),
+
+    path('login/', custom_login, name='custom_login'),
+    path('signup/', custom_signup, name='custom_signup'),
+    path('logout/', custom_logout, name='custom_logout'),
+
+    path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
+    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
 
     path("add_task/", add_task, name="add_task"),
     path("delete_task/<int:task_id>/", delete_task, name="delete_task"),

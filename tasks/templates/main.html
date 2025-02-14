@@ -12,11 +12,11 @@
     <meta name="csrf-token" content="{{ csrf_token }}">
 
     <script>
-        const deleteIconPath = "{% static 'images/delete.png' %}";
-        const calendIconPath = "{% static 'images/calendar.png' %}";
-        const clockIconPath = "{% static 'images/clock.png' %}";
-        const pencilIconPath = "{% static 'images/pencil.png' %}";
-        const plusIconPath = "{% static 'images/plus.png' %}";
+        var deleteIconPath = "{% static 'images/delete.png' %}";
+        var calendIconPath = "{% static 'images/calendar.png' %}";
+        var clockIconPath = "{% static 'images/clock.png' %}";
+        var pencilIconPath = "{% static 'images/pencil.png' %}";
+        var plusIconPath = "{% static 'images/plus.png' %}";
     </script>
 
     <script type="module" src="{% static 'scripts/main.js' %}"></script>
@@ -26,17 +26,17 @@
 </head>
 
 
-<body hx-boost="true" hx-ext="debug">
+<body hx-boost="true" data-authenticated="{{ user.is_authenticated|lower }}">
     {% csrf_token %}
     <!-- Navbar -->
     <div class="nav-right">
         {% if user.is_authenticated %}
         {% csrf_token %}
         <span class="welcome-message">Welcome, {{ user.username }}!</span>
-        <a href="{% url 'account_logout' %}" class="btn logout-btn">Logout</a>
+        <a href="{% url 'custom_logout' %}?next={{ request.path }}" class="btn logout-btn">Logout</a>
         {% else %}
-        <a href="{% url 'account_login' %}" class="btn login-btn">Login</a>
-        <a href="{% url 'account_signup' %}" class="btn signup-btn">Sign Up</a>
+        <a href="{% url 'custom_login' %}?next={{ request.path }}" class="btn login-btn">Login</a>
+        <a href="{% url 'custom_signup' %}?next={{ request.path }}" class="btn signup-btn">Sign Up</a>
         {% endif %}
     </div>
 
